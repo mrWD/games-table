@@ -164,21 +164,30 @@ function yearAffinity(game: GameSummary, meanYear: number | null): number {
  * Names the library titles this candidate actually resembles. Using the globally
  * heaviest titles instead prints the same sentence under every row, which reads as
  * boilerplate — a lesson already paid for in FilmTable.
+ *
+ * A second title is named only when it explains something the first one does not.
+ * Bloodborne shares Action and RPG with The Witcher 3, and RPG with Stardew Valley;
+ * naming both made it sound like a farming game got you here, when Stardew added
+ * nothing the first title had not already covered.
  */
 function reasonFor(candidate: GameSummary, taste: Taste): string {
   const ranked = taste.seeds
     .map((seed) => {
-      const overlap = seed.genres.filter((g) => candidate.genres.includes(g)).length
-      if (overlap === 0) return null
+      const shared = seed.genres.filter((g) => candidate.genres.includes(g))
+      if (shared.length === 0) return null
       const union = new Set([...seed.genres, ...candidate.genres]).size
-      return { title: seed.title, score: (overlap / union) * Math.sqrt(seed.weight) }
+      return { title: seed.title, shared, score: (shared.length / union) * Math.sqrt(seed.weight) }
     })
-    .filter((x): x is { title: string; score: number } => x !== null)
+    .filter((x): x is { title: string; shared: string[]; score: number } => x !== null)
     .sort((a, b) => b.score - a.score)
 
   const titles: string[] = []
-  for (const { title } of ranked) {
-    if (!titles.includes(title)) titles.push(title)
+  const explained = new Set<string>()
+  for (const { title, shared } of ranked) {
+    if (titles.includes(title)) continue
+    if (titles.length > 0 && shared.every((g) => explained.has(g))) continue
+    titles.push(title)
+    for (const g of shared) explained.add(g)
     if (titles.length === 2) break
   }
   if (titles.length === 0) {
