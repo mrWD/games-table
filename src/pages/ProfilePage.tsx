@@ -1,0 +1,199 @@
+import { useRef } from 'react'
+import { buildBackup, isValidBackup, useLibrary } from '../store/library'
+import { buildStats, STATUS_LABEL, STATUS_ORDER } from '../store/selectors'
+import { useUi } from '../store/ui'
+import { useTheme, type ThemeChoice } from '../store/theme'
+import { formatHours } from '../lib/format'
+import { IconDownload, IconPad, IconTrash, IconUpload } from '../components/Icons'
+
+const THEMES: { value: ThemeChoice; label: string; hint: string }[] = [
+  { value: 'system', label: 'SYSTEM', hint: 'Following your device setting.' },
+  { value: 'light', label: 'LIGHT', hint: 'Always light, whatever the device is set to.' },
+  { value: 'dark', label: 'DARK', hint: 'Always dark, whatever the device is set to.' },
+]
+
+function Bars({ data }: { data: [string, number][] }) {
+  const max = Math.max(1, ...data.map(([, v]) => v))
+  return (
+    <div className="barlist">
+      {data.map(([label, value]) => (
+        <div key={label} className="barrow">
+          <span className="barrow-label">{label}</span>
+          <span className="barrow-track">
+            <span className="barrow-fill" style={{ width: `${(value / max) * 100}%` }} />
+          </span>
+          <span className="barrow-value">{value}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+export default function ProfilePage() {
+  const games = useLibrary((s) => s.games)
+  const importBackup = useLibrary((s) => s.importBackup)
+  const resetAll = useLibrary((s) => s.resetAll)
+  const showToast = useUi((s) => s.showToast)
+  const askConfirm = useUi((s) => s.askConfirm)
+  const theme = useTheme((s) => s.theme)
+  const setTheme = useTheme((s) => s.setTheme)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  const stats = buildStats(games)
+
+  const doExport = () => {
+    const blob = new Blob([JSON.stringify(buildBackup(), null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `gamestable-backup-${new Date().toISOString().slice(0, 10)}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+    showToast('Backup exported')
+  }
+
+  const doImport = async (file: File) => {
+    try {
+      const data: unknown = JSON.parse(await file.text())
+      if (!isValidBackup(data)) throw new Error('not a GamesTable backup')
+      const ok = await askConfirm({
+        title: 'Import backup?',
+        message: 'Your current library will be replaced by the backup contents.',
+        confirmLabel: 'Import',
+      })
+      if (!ok) return
+      importBackup(data)
+      showToast('Backup imported')
+    } catch (err) {
+      console.warn(err)
+      showToast('Import failed: not a valid backup file')
+    }
+  }
+
+  return (
+    <div className="page profile">
+      <div className="profile-head">
+        <div className="avatar">
+          <IconPad size={34} strokeWidth={1.6} />
+        </div>
+        <h1>My games</h1>
+        <p className="profile-sub">Stored on this device · no account needed</p>
+      </div>
+
+      <div className="stats">
+        <div className="stat">
+          <span className="stat-num">{stats.byStatus.played}</span>
+          <span className="stat-label">PLAYED</span>
+        </div>
+        <div className="stat">
+          <span className="stat-num">{stats.byStatus.playing}</span>
+          <span className="stat-label">PLAYING</span>
+        </div>
+        <div className="stat">
+          <span className="stat-num">{formatHours(stats.hours) || '0h'}</span>
+          <span className="stat-label">LOGGED</span>
+        </div>
+        <div className="stat">
+          <span className="stat-num">
+            {stats.averageRating ? stats.averageRating.toFixed(1) : '—'}
+          </span>
+          <span className="stat-label">AVG SCORE</span>
+        </div>
+      </div>
+      <p className="chips-hint">
+        {stats.total} games tracked · {stats.finishedThisYear} finished this year
+      </p>
+
+      {stats.total > 0 && (
+        <>
+          <h2 className="h2">By status</h2>
+          <Bars data={STATUS_ORDER.map((s) => [STATUS_LABEL[s], stats.byStatus[s]] as [string, number]).filter(([, v]) => v > 0)} />
+        </>
+      )}
+
+      {stats.topPlatforms.length > 0 && (
+        <>
+          <h2 className="h2">Platforms</h2>
+          <Bars data={stats.topPlatforms} />
+        </>
+      )}
+
+      {stats.topGenres.length > 0 && (
+        <>
+          <h2 className="h2">Genres</h2>
+          <Bars data={stats.topGenres} />
+        </>
+      )}
+
+      <h2 className="h2">Appearance</h2>
+      <div className="chips">
+        {THEMES.map((t) => (
+          <button
+            key={t.value}
+            className={`chip${theme === t.value ? ' active' : ''}`}
+            onClick={() => setTheme(t.value)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <p className="chips-hint">{THEMES.find((t) => t.value === theme)?.hint}</p>
+
+      <h2 className="h2">Data</h2>
+      <div className="datacard">
+        <button className="datarow" onClick={doExport}>
+          <IconDownload size={20} />
+          <div>
+            <div className="datarow-title">Export backup</div>
+            <div className="datarow-sub">Download your library as a JSON file</div>
+          </div>
+        </button>
+        <button className="datarow" onClick={() => fileRef.current?.click()}>
+          <IconUpload size={20} />
+          <div>
+            <div className="datarow-title">Import backup</div>
+            <div className="datarow-sub">Restore from a GamesTable backup file</div>
+          </div>
+        </button>
+        <button
+          className="datarow danger"
+          onClick={async () => {
+            const ok = await askConfirm({
+              title: 'Reset everything?',
+              message: 'All games and notes on this device will be deleted.',
+              confirmLabel: 'Delete all',
+              danger: true,
+            })
+            if (ok) {
+              resetAll()
+              showToast('Library cleared')
+            }
+          }}
+        >
+          <IconTrash size={20} />
+          <div>
+            <div className="datarow-title">Reset all data</div>
+            <div className="datarow-sub">Delete the whole library from this device</div>
+          </div>
+        </button>
+      </div>
+      <input
+        ref={fileRef}
+        type="file"
+        accept="application/json,.json"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0]
+          if (f) void doImport(f)
+          e.target.value = ''
+        }}
+      />
+
+      <p className="attribution">
+        GamesTable · a free, fan-made, local-first tracker · not affiliated with RAWG, Valve,
+        YouTube or Twitch
+      </p>
+      <p className="attribution">Game data from RAWG and Steam · build {__BUILD_TIME__}</p>
+    </div>
+  )
+}
