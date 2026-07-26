@@ -11,13 +11,14 @@ const STEAM_STORE = 'https://store.steampowered.com/api/'
 
 /** GET-only allowlists; nothing else upstream is reachable through us. */
 const ALLOWED = {
-  rawg: (path) => path === 'games' || /^games\/[\w.-]+$/.test(path),
+  rawg: (path) =>
+    path === 'games' || path === 'genres' || /^games\/[\w.-]+$/.test(path),
   steam: (path) => path === 'storesearch' || path === 'appdetails',
 }
 
 function cacheFor(source, path) {
   // Catalogue entries are effectively static; searches change more often.
-  if (source === 'rawg' && /^games\/[\w.-]+$/.test(path))
+  if (source === 'rawg' && (/^games\/[\w.-]+$/.test(path) || path === 'genres'))
     return 'public, s-maxage=86400, stale-while-revalidate=604800'
   if (source === 'steam' && path === 'appdetails')
     return 'public, s-maxage=86400, stale-while-revalidate=604800'

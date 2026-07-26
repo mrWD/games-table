@@ -48,9 +48,9 @@ interface RawgGame {
   rating?: number | null
   playtime?: number | null
   description_raw?: string
-  genres?: { name: string }[]
-  platforms?: { platform: { name: string } }[]
-  parent_platforms?: { platform: { name: string } }[]
+  genres?: { name: string; slug?: string }[]
+  platforms?: { platform: { name: string; id?: number } }[]
+  parent_platforms?: { platform: { name: string; id?: number } }[]
 }
 
 function mapRawg(g: RawgGame): GameSummary {
@@ -65,7 +65,26 @@ function mapRawg(g: RawgGame): GameSummary {
     rating: g.rating ?? null,
     description: g.description_raw,
     playtimeHours: g.playtime ?? null,
+    genreSlugs: (g.genres ?? []).map((x) => x.slug).filter((x): x is string => Boolean(x)),
+    platformIds: (g.parent_platforms ?? [])
+      .map((x) => x.platform.id)
+      .filter((x): x is number => typeof x === 'number'),
   }
+}
+
+/** Genre-filtered catalogue used to gather recommendation candidates. */
+export async function catalogueByGenre(
+  genreSlug: string,
+  opts: { platformIds?: number[]; ordering?: string; pageSize?: number } = {},
+): Promise<GameSummary[]> {
+  const params: Record<string, string> = {
+    genres: genreSlug,
+    ordering: opts.ordering ?? '-metacritic',
+    page_size: String(opts.pageSize ?? 40),
+  }
+  if (opts.platformIds?.length) params.parent_platforms = opts.platformIds.join(',')
+  const data = await proxy<{ results?: RawgGame[] }>('rawg', 'games', params)
+  return (data?.results ?? []).map(mapRawg)
 }
 
 // ---------- Steam ----------

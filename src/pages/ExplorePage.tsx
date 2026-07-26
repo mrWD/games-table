@@ -1,8 +1,45 @@
 import { useEffect, useRef } from 'react'
 import { useExplore } from '../store/explore'
+import { useRecommend } from '../store/recommend'
 import { GameResultRow } from '../components/cards'
 import { SectionLabel, SkeletonRows } from '../components/ui'
 import { IconSearch, IconX } from '../components/Icons'
+
+function ForYou() {
+  const { items, loading, error, taste, load } = useRecommend()
+
+  useEffect(() => {
+    void load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // An empty library has nothing to reason from — the shelves below answer better.
+  if (!loading && items.length === 0 && (taste?.topGenres.length ?? 0) === 0) return null
+
+  return (
+    <section>
+      <div className="h2-row">
+        <h2 className="h2">For you</h2>
+        <button className="textbtn" onClick={() => void load({ force: true })} disabled={loading}>
+          Refresh
+        </button>
+      </div>
+      {taste && taste.topGenres.length > 0 && (
+        <p className="chips-hint">
+          Based on {taste.seedCount} game{taste.seedCount === 1 ? '' : 's'} in your library ·{' '}
+          {taste.topGenres.slice(0, 3).join(', ')}
+        </p>
+      )}
+      {loading && items.length === 0 && <SkeletonRows count={3} />}
+      {error && items.length === 0 && (
+        <p className="hint">Could not build recommendations right now.</p>
+      )}
+      {items.map((r) => (
+        <GameResultRow key={r.game.id} game={r.game} reason={r.reason} />
+      ))}
+    </section>
+  )
+}
 
 export default function ExplorePage() {
   const { query, results, searching, failed, popular, upcoming, discoverLoading, setQuery, runSearch, loadDiscover } =
@@ -67,6 +104,7 @@ export default function ExplorePage() {
         </>
       ) : (
         <>
+          <ForYou />
           {discoverLoading && popular.length === 0 && <SkeletonRows count={3} />}
           {popular.length > 0 && (
             <section>

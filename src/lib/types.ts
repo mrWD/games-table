@@ -27,6 +27,9 @@ export interface GameSummary {
   rating: number | null
   description?: string
   playtimeHours?: number | null
+  /** RAWG slugs and parent-platform ids: the catalogue filters by these, not by names. */
+  genreSlugs?: string[]
+  platformIds?: number[]
 }
 
 /** A game once it is in the library: the catalogue snapshot plus what you did with it. */

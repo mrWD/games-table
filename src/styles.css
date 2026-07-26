@@ -192,6 +192,24 @@ img {
   color: var(--ink3);
 }
 
+.reason {
+  font-size: 12.5px;
+  color: var(--ink3);
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.h2-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .gamemarks {
   font-size: 12.5px;
   font-weight: 700;

@@ -39,7 +39,7 @@ export function GameRow({ game }: { game: TrackedGame }) {
 }
 
 /** Search result: same shape, but the action adds it instead of opening it. */
-export function GameResultRow({ game }: { game: GameSummary }) {
+export function GameResultRow({ game, reason }: { game: GameSummary; reason?: string }) {
   const inLib = useLibrary((s) => s.games[game.id])
   return (
     <Link className="card gamecard" to={`/game/${encodeURIComponent(game.id)}`} state={{ game }}>
@@ -47,11 +47,13 @@ export function GameResultRow({ game }: { game: GameSummary }) {
       <div className="gamecard-body">
         <div className="gametitle">{game.title}</div>
         <div className="gamesub">{subtitle(game)}</div>
-        {inLib && (
+        {inLib ? (
           <div className="gamemarks">
             <Badge variant="accent">{STATUS_LABEL[inLib.status]}</Badge>
           </div>
-        )}
+        ) : reason ? (
+          <div className="reason">{reason}</div>
+        ) : null}
       </div>
       <div className="gamecard-right">
         <MetaScore score={game.metacritic} />
