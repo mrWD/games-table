@@ -22,6 +22,7 @@ export default function GameDetailPage() {
   const rate = useLibrary((s) => s.rate)
   const setHours = useLibrary((s) => s.setHours)
   const setNote = useLibrary((s) => s.setNote)
+  const setPlatform = useLibrary((s) => s.setPlatform)
   const remove = useLibrary((s) => s.remove)
   const updateMeta = useLibrary((s) => s.updateMeta)
   const showToast = useUi((s) => s.showToast)
@@ -112,6 +113,24 @@ export default function GameDetailPage() {
                   ))}
                 </div>
               </label>
+
+              {game.platforms.length > 0 && (
+                <div className="field">
+                  <span>Platform</span>
+                  <div className="platrow">
+                    {game.platforms.map((p) => (
+                      <button
+                        key={p}
+                        className={`platbtn${tracked.platform === p ? ' active' : ''}`}
+                        aria-pressed={tracked.platform === p}
+                        onClick={() => setPlatform(id, tracked.platform === p ? undefined : p)}
+                      >
+                        {shortPlatform(p)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <label className="field">
                 <span>Hours played</span>

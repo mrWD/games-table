@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import { Link } from 'react-router-dom'
 import type { GameStatus, GameSummary, TrackedGame } from '../lib/types'
 import { formatHours, shortPlatform, yearOf } from '../lib/format'
@@ -13,6 +14,36 @@ function subtitle(game: GameSummary): string {
     .join(' • ')
 }
 
+/**
+ * Only three platforms fit, so the one you marked leads — otherwise a Switch note on a
+ * six-platform game would be cut off by the very list that is supposed to show it.
+ */
+function orderedPlatforms(game: TrackedGame): string[] {
+  const rest = game.platforms.filter((p) => p !== game.platform)
+  const list = game.platform ? [game.platform, ...rest] : rest
+  return list.slice(0, 3)
+}
+
+/** Same line as any other row, except the platform you used is picked out of it. */
+function TrackedSubtitle({ game }: { game: TrackedGame }) {
+  const year = yearOf(game.released)
+  const platforms = orderedPlatforms(game)
+  return (
+    <>
+      {year}
+      {year && platforms.length > 0 && ' • '}
+      {platforms.map((p, i) => (
+        <Fragment key={p}>
+          {i > 0 && ', '}
+          <span className={p === game.platform ? 'plat-mine' : undefined}>
+            {shortPlatform(p)}
+          </span>
+        </Fragment>
+      ))}
+    </>
+  )
+}
+
 /** Row used in the library: cover, meta, and whatever the player recorded. */
 export function GameRow({ game }: { game: TrackedGame }) {
   const marks = [
@@ -25,7 +56,9 @@ export function GameRow({ game }: { game: TrackedGame }) {
       <Cover src={game.cover} alt={game.title} className="gamecard-cover" />
       <div className="gamecard-body">
         <div className="gametitle">{game.title}</div>
-        <div className="gamesub">{subtitle(game)}</div>
+        <div className="gamesub">
+          <TrackedSubtitle game={game} />
+        </div>
         {game.genres.length > 0 && (
           <div className="gamesub dim">{game.genres.slice(0, 2).join(', ')}</div>
         )}

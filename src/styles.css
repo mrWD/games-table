@@ -417,6 +417,34 @@ img {
   margin: 4px 0 14px;
 }
 
+/* The platform you actually used, picked out of the list the row already shows. */
+.plat-mine {
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.platrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.platbtn {
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink2);
+}
+
+.platbtn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+
 .chips-hint {
   color: var(--ink3);
   font-size: 12.5px;

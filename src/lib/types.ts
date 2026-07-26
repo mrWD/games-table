@@ -42,6 +42,12 @@ export interface TrackedGame extends GameSummary {
   rated?: number
   hours?: number
   note?: string
+  /**
+   * The platform you actually played or watched on. Held as one of the game's own
+   * platform names rather than free text, so the library can pick it out of the list
+   * it already shows instead of repeating it.
+   */
+  platform?: string
 }
 
 export interface BackupFile {

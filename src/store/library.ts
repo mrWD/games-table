@@ -18,6 +18,7 @@ interface LibraryState {
   rate: (id: string, rated: number | undefined) => void
   setHours: (id: string, hours: number | undefined) => void
   setNote: (id: string, note: string) => void
+  setPlatform: (id: string, platform: string | undefined) => void
   updateMeta: (id: string, patch: Partial<GameSummary>) => void
 
   importBackup: (b: BackupFile) => void
@@ -93,6 +94,16 @@ export const useLibrary = create<LibraryState>()(
           const g = s.games[id]
           if (!g) return s
           return { games: { ...s.games, [id]: { ...g, note } } }
+        }),
+
+      setPlatform: (id, platform) =>
+        set((s) => {
+          const g = s.games[id]
+          if (!g) return s
+          const next = { ...g }
+          if (platform == null) delete next.platform
+          else next.platform = platform
+          return { games: { ...s.games, [id]: next } }
         }),
 
       /** Search results are lighter than the detail endpoint; fill the gaps later. */
