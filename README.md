@@ -6,6 +6,8 @@
 PWA: работает на Android, iPhone и в вебе из одной кодовой базы, ставится на домашний
 экран. Библиотека хранится на устройстве, аккаунт не нужен.
 
+**→ [games-table-bay.vercel.app](https://games-table-bay.vercel.app)**
+
 Свободный фан-проект. Не аффилирован с RAWG, Valve, YouTube или Twitch.
 
 ## Возможности
