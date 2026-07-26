@@ -3,6 +3,7 @@ import { buildBackup, isValidBackup, useLibrary } from '../store/library'
 import { buildStats, STATUS_LABEL, STATUS_ORDER } from '../store/selectors'
 import { useUi } from '../store/ui'
 import { useTheme, type ThemeChoice } from '../store/theme'
+import { useStats } from '../store/stats'
 import { formatHours } from '../lib/format'
 import { IconDownload, IconPad, IconTrash, IconUpload } from '../components/Icons'
 import { SupportLinks } from '../components/Support'
@@ -31,6 +32,25 @@ function Bars({ data }: { data: [string, number][] }) {
   )
 }
 
+/**
+ * The library exists only in this browser: clearing site data wipes it, and Safari's
+ * tracking prevention can clear it on its own for a site that lives in a tab. A backup is
+ * the only defence, so once there is enough to lose, say so — quietly, and not forever.
+ */
+function BackupNudge({ items }: { items: number }) {
+  const lastExportAt = useStats((s) => s.lastExportAt)
+  if (items < 15) return null
+  const days = lastExportAt ? Math.floor((Date.now() - lastExportAt) / 86400000) : null
+  if (days !== null && days < 60) return null
+  return (
+    <p className="chips-hint">
+      {days === null
+        ? `${items} entries and no backup yet — export one, it is a single file.`
+        : `Last backup was ${days} days ago.`}
+    </p>
+  )
+}
+
 export default function ProfilePage() {
   const games = useLibrary((s) => s.games)
   const importBackup = useLibrary((s) => s.importBackup)
@@ -51,6 +71,7 @@ export default function ProfilePage() {
     a.download = `gamestable-backup-${new Date().toISOString().slice(0, 10)}.json`
     a.click()
     URL.revokeObjectURL(url)
+    useStats.getState().recordExport()
     showToast('Backup exported')
   }
 
@@ -142,6 +163,7 @@ export default function ProfilePage() {
       <p className="chips-hint">{THEMES.find((t) => t.value === theme)?.hint}</p>
 
       <h2 className="h2">Data</h2>
+      <BackupNudge items={Object.keys(games).length} />
       <div className="datacard">
         <button className="datarow" onClick={doExport}>
           <IconDownload size={20} />

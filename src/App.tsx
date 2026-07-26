@@ -9,6 +9,7 @@ import { BottomNav, ConfirmHost, ScrollToTop, ToastHost } from './components/ui'
 import { watchSystemTheme } from './store/theme'
 import { beginSessionOnce, useStats } from './store/stats'
 import { SupportFab } from './components/Support'
+import { InstallHint } from './components/InstallHint'
 
 function Shell() {
   const location = useLocation()
@@ -28,6 +29,7 @@ function Shell() {
   return (
     <div className={`app${isDetail ? ' on-detail' : ''}`}>
       <ScrollToTop />
+      <InstallHint />
       <Routes>
         <Route path="/" element={<Navigate to="/library" replace />} />
         <Route path="/library" element={<LibraryPage />} />
