@@ -41,6 +41,18 @@ export const TAB_STATUSES: Record<Tab, GameStatus[]> = {
   WATCH: ['watching', 'to-watch', 'watched'],
 }
 
+/**
+ * The other three tabs are one status each; WATCH holds three at once, which reads as
+ * one long list. 'ALL' keeps the grouped view, the rest narrow it to a single status.
+ */
+export type WatchFilter = 'ALL' | 'watching' | 'to-watch' | 'watched'
+
+export const WATCH_FILTERS: WatchFilter[] = ['ALL', 'watching', 'to-watch', 'watched']
+
+export function watchFilterLabel(filter: WatchFilter): string {
+  return filter === 'ALL' ? 'All' : STATUS_LABEL[filter]
+}
+
 function recency(g: TrackedGame): number {
   return g.finishedAt ?? g.startedAt ?? g.addedAt
 }

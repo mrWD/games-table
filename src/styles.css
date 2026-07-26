@@ -412,6 +412,11 @@ img {
   color: var(--on-accent);
 }
 
+/* Sits between the tab bar and the list, so it needs air on both sides. */
+.watchfilter {
+  margin: 4px 0 14px;
+}
+
 .chips-hint {
   color: var(--ink3);
   font-size: 12.5px;
