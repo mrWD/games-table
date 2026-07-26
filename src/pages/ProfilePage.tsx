@@ -4,6 +4,7 @@ import { buildStats, STATUS_LABEL, STATUS_ORDER } from '../store/selectors'
 import { useUi } from '../store/ui'
 import { useTheme, type ThemeChoice } from '../store/theme'
 import { useStats } from '../store/stats'
+import { AutoBackup } from '../components/AutoBackup'
 import { formatHours } from '../lib/format'
 import { IconDownload, IconPad, IconTrash, IconUpload } from '../components/Icons'
 import { SupportLinks } from '../components/Support'
@@ -179,6 +180,7 @@ export default function ProfilePage() {
             <div className="datarow-sub">Restore from a GamesTable backup file</div>
           </div>
         </button>
+        <AutoBackup />
         <button
           className="datarow danger"
           onClick={async () => {

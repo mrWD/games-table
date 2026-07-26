@@ -5,6 +5,7 @@ import { useLibrary } from '../store/library'
 import { buildStats } from '../store/selectors'
 import { formatDate, formatHours } from '../lib/format'
 import { useUi } from '../store/ui'
+import { isPersisted } from '../lib/durability'
 import { IconBack } from '../components/Icons'
 
 /**
@@ -28,6 +29,7 @@ interface Environment {
   storageQuotaMb: string | null
   libraryKb: string
   online: boolean
+  storagePersisted: boolean
   language: string
   buildTime: string
 }
@@ -56,6 +58,7 @@ async function readEnvironment(): Promise<Environment> {
     storageQuotaMb: quota,
     libraryKb: kb(localStorage.getItem('gamestable-library-v1') ?? ''),
     online: navigator.onLine,
+    storagePersisted: await isPersisted(),
     language: navigator.language,
     buildTime: __BUILD_TIME__,
   }
@@ -205,6 +208,12 @@ export default function InsightsPage() {
             ['Mode', env.display],
             ['Service worker', env.serviceWorker],
             ['Network', env.online ? 'online' : 'offline'],
+            [
+              'Storage',
+              env.storagePersisted
+                ? 'persistent — the browser will not evict it on its own'
+                : 'best effort — may be evicted; installing the app helps',
+            ],
             [
               'Storage used',
               env.storageUsedMb ? `${env.storageUsedMb} MB of ${env.storageQuotaMb} MB` : 'n/a',
