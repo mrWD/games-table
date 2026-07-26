@@ -20,7 +20,7 @@ export function watchLinks(title: string): WatchLink[] {
   return [
     { label: 'Longplay', url: youtube(`${title} longplay no commentary`), host: 'youtube' },
     { label: 'Game movie', url: youtube(`${title} game movie all cutscenes`), host: 'youtube' },
-    { label: 'Прохождение', url: youtube(`${title} прохождение`), host: 'youtube' },
+    { label: 'Walkthrough', url: youtube(`${title} walkthrough`), host: 'youtube' },
     { label: 'Review', url: youtube(`${title} review`), host: 'youtube' },
     { label: 'Twitch', url: `https://www.twitch.tv/search?term=${encodeURIComponent(title)}`, host: 'twitch' },
   ]

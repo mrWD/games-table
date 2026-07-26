@@ -75,9 +75,14 @@ rawg.io/apidocs, для некоммерческого использовани�
 
 API не нужен вообще. Кнопки ведут на поисковые адреса:
 
-- `https://www.youtube.com/results?search_query=<игра>+longplay`
-- `https://www.youtube.com/results?search_query=<игра>+прохождение`
+- `https://www.youtube.com/results?search_query=<игра>+longplay+no+commentary`
+- `https://www.youtube.com/results?search_query=<игра>+game+movie+all+cutscenes`
+- `https://www.youtube.com/results?search_query=<игра>+walkthrough`
+- `https://www.youtube.com/results?search_query=<игра>+review`
 - `https://www.twitch.tv/search?term=<игра>`
+
+Запросы только английские: интерфейс приложения англоязычный целиком, и русскоязычный
+пресет из него убран.
 
 YouTube Data API требует ключ и имеет жёсткие квоты, а для сценария «хочу посмотреть»
 достаточно открыть готовую выдачу. Заодно ничего не встраивается и не отслеживается.
