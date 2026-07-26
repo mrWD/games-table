@@ -194,7 +194,9 @@ img {
 
 .reason {
   font-size: 12.5px;
-  color: var(--ink3);
+  /* ink3 measured 3.99:1 on the dark card — below AA for text this size. The italic
+     already marks it as secondary, so it does not need a dimmer colour to do it. */
+  color: var(--ink2);
   font-style: italic;
   overflow: hidden;
   text-overflow: ellipsis;
