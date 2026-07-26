@@ -199,7 +199,9 @@ img {
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  /* Two game titles rarely fit in two lines of the ~180px body column, and a reason
+     cut off mid-title explains nothing. */
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
 }
 
