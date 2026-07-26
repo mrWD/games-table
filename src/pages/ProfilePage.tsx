@@ -6,6 +6,7 @@ import { useTheme, type ThemeChoice } from '../store/theme'
 import { formatHours } from '../lib/format'
 import { IconDownload, IconPad, IconTrash, IconUpload } from '../components/Icons'
 import { SupportLinks } from '../components/Support'
+import { Feedback } from '../components/Feedback'
 
 const THEMES: { value: ThemeChoice; label: string; hint: string }[] = [
   { value: 'system', label: 'SYSTEM', hint: 'Following your device setting.' },
@@ -189,6 +190,9 @@ export default function ProfilePage() {
           e.target.value = ''
         }}
       />
+
+      <h2 className="h2">Feedback &amp; contact</h2>
+      <Feedback />
 
       <h2 className="h2">Support</h2>
       <SupportLinks />
