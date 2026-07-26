@@ -113,6 +113,9 @@ export const IconUpload = (p: IconProps) =>
     p,
   )
 
+export const IconHeart = (p: IconProps) =>
+  svg(<path d="M12 20s-7-4.4-7-9.2A4 4 0 0 1 12 8a4 4 0 0 1 7 2.8C19 15.6 12 20 12 20z" />, p)
+
 export const IconExternal = (p: IconProps) =>
   svg(
     <>

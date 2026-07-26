@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { popularGames, searchGames, upcomingGames } from '../lib/api'
 import type { GameSummary } from '../lib/types'
+import { stats } from './stats'
 
 interface ExploreState {
   query: string
@@ -39,6 +40,7 @@ export const useExplore = create<ExploreState>((set, get) => ({
       return
     }
     set({ searching: true, failed: false })
+    stats.search()
     try {
       const results = await searchGames(term)
       // A slower earlier search must not overwrite a newer one.

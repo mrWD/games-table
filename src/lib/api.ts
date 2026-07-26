@@ -1,4 +1,5 @@
 import type { GameSummary } from './types'
+import { stats } from '../store/stats'
 
 /**
  * Both catalogues are reached through our own /api/games proxy — RAWG because its key
@@ -120,7 +121,10 @@ export async function searchGames(query: string): Promise<GameSummary[]> {
     search: term,
     page_size: '20',
   })
-  if (viaRawg?.results?.length) return viaRawg.results.map(mapRawg)
+  if (viaRawg?.results?.length) {
+    stats.source('rawg')
+    return viaRawg.results.map(mapRawg)
+  }
 
   // Steam only knows PC titles, so this is a narrower answer, not an equal one.
   const viaSteam = await proxy<{ items?: SteamSearchItem[] }>('steam', 'storesearch', {
@@ -128,6 +132,7 @@ export async function searchGames(query: string): Promise<GameSummary[]> {
     l: 'en',
     cc: 'US',
   })
+  if (viaSteam?.items?.length) stats.source('steam')
   return (viaSteam?.items ?? []).map((i) => ({
     id: `steam:${i.id}`,
     title: i.name,

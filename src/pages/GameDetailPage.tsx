@@ -6,6 +6,7 @@ import { watchLinks } from '../lib/watch'
 import { formatDate, formatHours, isYearOnly, shortPlatform, yearOf } from '../lib/format'
 import { useLibrary } from '../store/library'
 import { useUi } from '../store/ui'
+import { useStats } from '../store/stats'
 import { StatusPicker } from '../components/cards'
 import { Cover, MetaScore } from '../components/ui'
 import { IconBack, IconExternal, IconTrash } from '../components/Icons'
@@ -152,6 +153,7 @@ export default function GameDetailPage() {
               href={link.url}
               target="_blank"
               rel="noreferrer noopener"
+              onClick={() => useStats.getState().recordWatchLink()}
             >
               {link.label}
               <IconExternal size={15} strokeWidth={2} />

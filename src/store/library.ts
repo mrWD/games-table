@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { BackupFile, GameStatus, GameSummary, TrackedGame } from '../lib/types'
+import { useStats } from './stats'
 
 /**
  * The whole user library. Unlike FilmTable's shows there is no separate metadata cache:
@@ -38,7 +39,9 @@ export const useLibrary = create<LibraryState>()(
     (set) => ({
       games: {},
 
-      setStatus: (game, status) =>
+      setStatus: (game, status) => {
+        // Outside the updater on purpose: StrictMode runs it twice.
+        useStats.getState().recordStatusChange()
         set((s) => {
           const now = Date.now()
           const existing = s.games[game.id]
@@ -46,14 +49,17 @@ export const useLibrary = create<LibraryState>()(
             ? { ...existing, ...game, id: existing.id }
             : { ...game, status, addedAt: now }
           return { games: { ...s.games, [game.id]: withTimestamps(base, status, now) } }
-        }),
+        })
+      },
 
-      changeStatus: (id, status) =>
+      changeStatus: (id, status) => {
+        useStats.getState().recordStatusChange()
         set((s) => {
           const g = s.games[id]
           if (!g) return s
           return { games: { ...s.games, [id]: withTimestamps(g, status, Date.now()) } }
-        }),
+        })
+      },
 
       remove: (id) =>
         set((s) => {

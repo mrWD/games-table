@@ -5,6 +5,7 @@ import { useUi } from '../store/ui'
 import { useTheme, type ThemeChoice } from '../store/theme'
 import { formatHours } from '../lib/format'
 import { IconDownload, IconPad, IconTrash, IconUpload } from '../components/Icons'
+import { SupportLinks } from '../components/Support'
 
 const THEMES: { value: ThemeChoice; label: string; hint: string }[] = [
   { value: 'system', label: 'SYSTEM', hint: 'Following your device setting.' },
@@ -188,6 +189,9 @@ export default function ProfilePage() {
           e.target.value = ''
         }}
       />
+
+      <h2 className="h2">Support</h2>
+      <SupportLinks />
 
       <p className="attribution">
         GamesTable · a free, fan-made, local-first tracker · not affiliated with RAWG, Valve,
