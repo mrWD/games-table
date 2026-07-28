@@ -221,6 +221,13 @@ export default function ProfilePage() {
       <h2 className="h2">Support</h2>
       <SupportLinks />
 
+      <h2 className="h2">More from the author</h2>
+      <p className="attribution">
+        <a href="https://mrwd.github.io/" target="_blank" rel="noreferrer">
+          All products &rarr;
+        </a>
+      </p>
+
       <p className="attribution">
         GamesTable · a free, fan-made, local-first tracker · not affiliated with RAWG, Valve,
         YouTube or Twitch
