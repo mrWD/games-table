@@ -1,81 +1,91 @@
-# Решения
+# Decisions
 
-Почему сделано так. Отдельно — уроки, унаследованные от FilmTable: их не нужно проходить
-заново.
+Why things are built this way. Separately: the lessons inherited from FilmTable —
+there is no need to learn them again.
 
-## RAWG основной, Steam запасной
+## RAWG primary, Steam fallback
 
-Напрашивалось обратное: Steam не требует ключа, значит приложение работало бы «из
-коробки». Проверка это отменила — у Steam **нет консольных игр**: «zelda» находит ноль
-результатов, «mario» не находит ни одной игры Nintendo (замеры в DATA-SOURCES).
+The opposite seemed natural: Steam needs no key, so the app would work out of the
+box. Testing ruled that out — Steam has **no console games**: "zelda" returns zero
+results and "mario" finds not a single Nintendo game (measurements in
+DATA-SOURCES).
 
-Трекер, в котором не находится половина того, во что люди играют, бесполезен. Поэтому
-основной источник — RAWG с бесплатным ключом, а Steam остаётся запасным для PC-игр, когда
-прокси недоступен. Тот же компромисс, что в FilmTable с TMDB: полнота важнее удобства
-установки.
+A tracker that cannot find half of what people play is useless. So the primary
+source is RAWG with a free key, and Steam remains the fallback for PC games when
+the proxy is unavailable. The same trade-off as FilmTable made with TMDB:
+completeness beats ease of setup.
 
-## Прокси обязателен, а не опционален
+## The proxy is mandatory, not optional
 
-В FilmTable прокси был улучшением: keyless-источники работали из браузера сами. Здесь не
-так — **Steam не отдаёт CORS вообще**, а ключ RAWG нельзя держать в клиенте. Значит без
-serverless-функции приложение не может получить данные ни одним путём.
+In FilmTable the proxy was an improvement: keyless sources worked from the browser
+on their own. Not here — **Steam sends no CORS at all**, and the RAWG key cannot
+live in the client. So without a serverless function the app cannot get data by
+any route.
 
-Следствие, которое стоит помнить: локальная разработка без запущенного прокси покажет
-пустой поиск. Это не баг.
+A consequence worth remembering: local development without the proxy running shows
+empty search results. That is not a bug.
 
-## Семь статусов: две симметричные дорожки
+## Seven statuses: two symmetric tracks
 
-Владелец назвал четыре: играю, хочу сыграть, сыграл, хочу посмотреть. Дорожка просмотра
-получилась куцей — и он это заметил: игра может ещё не выйти, а игрофильм на десять часов
-за вечер не осилить. Поэтому «смотреть» устроено ровно как «играть»:
+The owner named four: playing, want to play, played, want to watch. The watch track
+came out stunted — and he noticed: a game may not be out yet, and a ten-hour game
+movie is not something you finish in one evening. So "watching" is arranged exactly
+like "playing":
 
-- **`watching`** — смотрю сейчас, полноценное состояние, а не промежуток между «хочу» и
-  «посмотрел».
-- **`watched`** — иначе список «хочу посмотреть» никогда не разгружается.
-- **`dropped`** — иначе брошенное вечно висит в «играю» и врёт в статистике. В FilmTable
-  аналогичный «Stop watching» пригодился и как отрицательный сигнал для рекомендаций.
+- **`watching`** — watching right now, a full state rather than a gap between "want
+  to" and "watched".
+- **`watched`** — otherwise the "want to watch" list never empties.
+- **`dropped`** — otherwise abandoned games hang in "playing" forever and lie in
+  the statistics. In FilmTable the equivalent "Stop watching" also proved useful as
+  a negative signal for recommendations.
 
-Семь кнопок подряд нечитаемы, поэтому переключатель сгруппирован: Play / Watch / Other.
+Seven buttons in a row are unreadable, so the switcher is grouped: Play / Watch /
+Other.
 
-## Просмотр — через ссылки, а не через API
+## Watching through links, not through an API
 
-YouTube Data API требует ключ и имеет жёсткие квоты, встроенный плеер тянет чужие куки.
-Для сценария «хочу посмотреть прохождение» достаточно открыть готовую выдачу поиска —
-это одна строка кода, ноль ключей, ноль трекинга. Плюс работает и для Twitch.
+The YouTube Data API requires a key and has hard quotas, and an embedded player
+drags in third-party cookies. For the "I want to watch a playthrough" scenario,
+opening a ready-made search results page is enough — one line of code, zero keys,
+zero tracking. It works for Twitch too.
 
-## Снимок игры вместо кэша
+## A game snapshot instead of a cache
 
-В FilmTable сериалы лежат в отдельном кэше с TTL, потому что выходят новые эпизоды. У игры
-метаданные не меняются, поэтому карточка сохраняется целиком в библиотеку. Проще, и
-библиотека полностью читается офлайн.
+In FilmTable, series live in a separate cache with a TTL because new episodes come
+out. A game's metadata does not change, so the whole record is stored in the
+library. Simpler, and the library reads fully offline.
 
-## Уроки из FilmTable — не наступать заново
+## Lessons from FilmTable — do not repeat them
 
-- **Vercel и `"type": "module"`.** Функция должна быть ESM (`export default`).
-- **Catch-all маршруты на Vercel** сопоставляются только с одним сегментом. Путь к
-  внешнему API передавать параметром `?path=`, а не сегментами URL.
-- **CSS Grid и переполнение.** У grid-элементов `min-width: auto`, поэтому длинное
-  название распирает колонку и всю страницу. Ставить `min-width: 0`. Проверять
-  переполнение **на ширине 375px** — на широком окне баг не виден.
-- **Побочные эффекты в редьюсерах zustand** выполняются дважды под StrictMode. Держать их
-  снаружи `set()`.
-- **Кнопки внутри кликабельных карточек** требуют и `stopPropagation`, и `preventDefault`.
-- **Service worker прячет свежий деплой.** После выката браузер отдаёт старую сборку из
-  precache: перед проверкой прода разрегистрировать worker и очистить `caches`.
-- **Vite отдаёт `api/*.js` как статику.** Без `server.proxy` относительный запрос
-  `/api/games` вернёт 200 с исходником функции, и клиент упадёт на разборе JSON.
-- **Даты и часовые пояса.** `new Date('24 Feb, 2022').toISOString()` даёт 23 февраля для
-  всех восточнее UTC, а `new Date('2022-02-24')` — это UTC-полночь, которая западнее UTC
-  отрисуется предыдущим днём. Собирать и разбирать даты по локальным частям.
-- **Скриншоты во время загрузки** показывают пустые плитки — это ленивые изображения, а не
-  поломка. Проверять `naturalWidth`.
-- **Частый опрос прода curl'ом** включает у Vercel защиту от ботов, и он начинает отдавать
-  403 автоматике. Опрашивать редко.
+- **Vercel and `"type": "module"`.** The function must be ESM (`export default`).
+- **Catch-all routes on Vercel** only match a single segment. Pass the path to the
+  external API as a `?path=` parameter, not as URL segments.
+- **CSS Grid and overflow.** Grid items have `min-width: auto`, so a long title
+  stretches the column and the whole page. Set `min-width: 0`. Check overflow **at
+  a width of 375px** — the bug is invisible in a wide window.
+- **Side effects in zustand reducers** run twice under StrictMode. Keep them
+  outside `set()`.
+- **Buttons inside clickable cards** need both `stopPropagation` and
+  `preventDefault`.
+- **The service worker hides a fresh deploy.** After a release the browser serves
+  the old build from the precache: unregister the worker and clear `caches` before
+  checking production.
+- **Vite serves `api/*.js` as a static file.** Without `server.proxy`, a relative
+  `/api/games` request returns 200 with the function's source code and the client
+  fails while parsing JSON.
+- **Dates and time zones.** `new Date('24 Feb, 2022').toISOString()` gives
+  February 23rd for everyone east of UTC, while `new Date('2022-02-24')` is UTC
+  midnight, which renders as the previous day west of UTC. Build and parse dates
+  from local parts.
+- **Screenshots taken during loading** show empty tiles — that is lazy image
+  loading, not breakage. Check `naturalWidth`.
+- **Polling production frequently with curl** trips Vercel's bot protection, and it
+  starts returning 403 to automation. Poll rarely.
 
-## Открыто
+## Open
 
-- ~~Ключ RAWG~~ — задан 2026-07-26, консольные игры находятся. Фолбэк на Steam остаётся
-  на случай, если RAWG отключат.
-- Рекомендации по играм (по жанрам и платформам, как в FilmTable) — после v1.
-- Часы прохождения: HowLongToBeat публичного API не имеет, поэтому часы вводятся вручную.
-  Если найдётся источник — можно подставлять ориентир.
+- ~~The RAWG key~~ — set on 2026-07-26, console games are found. The Steam fallback
+  stays in case RAWG is ever cut off.
+- Game recommendations (by genre and platform, as in FilmTable) — after v1.
+- Completion times: HowLongToBeat has no public API, so hours are entered manually.
+  If a source turns up, an estimate could be pre-filled.

@@ -1,102 +1,113 @@
-# GamesTable — контекст проекта
+# GamesTable — project context
 
-Читается автоматически в начале каждой сессии. Здесь то, что не выводится из кода.
+Read automatically at the start of every session. This holds what cannot be
+derived from the code.
 
-Подробности: [docs/PLAN.md](docs/PLAN.md) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) ·
+Details: [docs/PLAN.md](docs/PLAN.md) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) ·
 [docs/DATA-SOURCES.md](docs/DATA-SOURCES.md) · [docs/DECISIONS.md](docs/DECISIONS.md) ·
 [docs/DEPLOY.md](docs/DEPLOY.md)
 
-## Что это
+## What this is
 
-Личный трекер компьютерных игр: во что играю, что хочу пройти, что прошёл, и что хочу
-просто посмотреть прохождением или игрофильмом на YouTube и Twitch. PWA, данные на
-устройстве, без аккаунтов.
+A personal video game tracker: what I am playing, what I want to finish, what I
+have finished, and what I just want to watch as a playthrough or a game movie on
+YouTube and Twitch. A PWA, data on the device, no accounts.
 
-Младший брат [FilmTable](https://github.com/mrWD/film-table) — того же владельца
-(**mrWD**, `lvigtor@gmail.com`), с той же архитектурой и теми же принципами. Многие
-решения там уже приняты и проверены: прежде чем изобретать, посмотрите в соседний проект.
+The younger sibling of [FilmTable](https://github.com/mrWD/film-table) — same
+owner (**mrWD**, `lvigtor@gmail.com`), same architecture, same principles. Many
+decisions have already been made and proven there: before inventing something,
+look at the neighbouring project.
 
-## Принципы (не нарушать без явного согласия владельца)
+## Principles (do not break without the owner's explicit consent)
 
-1. **Библиотека живёт на устройстве.** `localStorage`, никаких аккаунтов, никакого сбора
-   данных. Серверного кода ровно столько, сколько нужно, чтобы спрятать ключ и обойти
-   отсутствие CORS, — и он ничего не хранит.
-2. **Смотреть — равноправный сценарий.** Дорожка просмотра симметрична игровой: хочу
-   посмотреть → смотрю → посмотрел. Не схлопывать её обратно в один статус.
-3. **Консольные игры должны находиться.** Если поиск перестанет находить Zelda, значит
-   что-то сломалось: это ровно тот дефект, из-за которого RAWG выбран основным источником.
-4. **Ключи только в переменных окружения.** `RAWG_API_KEY` живёт в панели Vercel. Не в
-   репозитории, не в бандле, не в переписке.
+1. **The library lives on the device.** `localStorage`, no accounts, no data
+   collection. There is exactly as much server code as it takes to hide the key
+   and work around the missing CORS — and it stores nothing.
+2. **Watching is a first-class scenario.** The watch track is symmetric to the
+   play track: want to watch → watching → watched. Do not collapse it back into a
+   single status.
+3. **Console games must be findable.** If search stops finding Zelda, something
+   is broken: that is exactly the defect that made RAWG the primary source.
+4. **Keys live only in environment variables.** `RAWG_API_KEY` lives in the Vercel
+   dashboard. Not in the repository, not in the bundle, not in chat.
 
-## Как запускать
+## How to run
 
 ```bash
 npm install
 npm run dev                       # :5173
 npm run build && npm run preview  # :4173
 
-# с RAWG: нужен .env.local с RAWG_API_KEY (в .gitignore)
-node --env-file=.env.local scripts/dev-api.mjs   # прокси на :3001
-npm run dev                                      # Vite сам проксирует /api на него
+# with RAWG: needs .env.local with RAWG_API_KEY (in .gitignore)
+node --env-file=.env.local scripts/dev-api.mjs   # proxy on :3001
+npm run dev                                      # Vite proxies /api to it
 ```
 
-## Как проверять
+## How to verify
 
-Автотестов нет, проверка ручная через браузерную панель на ширине 375px. Обязательный
-минимум после заметной правки:
+There are no automated tests; verification is manual through the browser panel at
+a width of 375px. The mandatory minimum after any noticeable change:
 
-- поиск на `zelda`, `mario`, `elden ring` — консольные игры обязаны находиться;
-- перевод игры по всем семи статусам, каждый попадает в свою вкладку и секцию;
-- вкладка WATCH: чипы `ALL / WATCHING / WANT TO WATCH / WATCHED` фильтруют, при `ALL`
-  возвращаются подписи секций;
-- отметка платформы на странице игры — в строке библиотеки она подсвечивается **в уже
-  имеющемся списке**, а не дописывается отдельно, и поднимается в начало;
-- секция «For you» в Explore: причины под карточками должны **различаться**, одинаковая
-  фраза под всеми — известный дефект, чинился дважды;
-- форма фидбэка в профиле собирает `mailto:` с темой и телом;
-- ссылки на YouTube и Twitch со страницы игры открывают верную выдачу, **все подписи
-  английские** — русскоязычный пресет убран намеренно;
-- обе темы и **горизонтальное переполнение** (`scrollWidth` против `clientWidth`, должно
-  быть 0 — в FilmTable этот баг ловился именно так);
-- скрытая страница `/#/insights` и веер донатов слева снизу;
-- консоль без ошибок.
+- search for `zelda`, `mario`, `elden ring` — console games must be found;
+- move a game through all seven statuses, each one landing in its own tab and
+  section;
+- the WATCH tab: the `ALL / WATCHING / WANT TO WATCH / WATCHED` chips filter, and
+  with `ALL` the section headings come back;
+- marking a platform on the game page — in the library row it is highlighted **in
+  the existing list** rather than appended separately, and it moves to the front;
+- the "For you" section in Explore: the reasons under the cards must **differ**,
+  the same phrase under all of them is a known defect that has been fixed twice;
+- the feedback form in the profile assembles a `mailto:` with a subject and body;
+- the YouTube and Twitch links from the game page open the right results, and
+  **every label is in English** — the Russian-language preset was removed
+  deliberately;
+- both themes and **horizontal overflow** (`scrollWidth` against `clientWidth`,
+  must be 0 — that is exactly how this bug was caught in FilmTable);
+- the hidden `/#/insights` page and the donation fan at the bottom left;
+- a clean console.
 
-Грабли самой проверки (все три уже съели время):
+Pitfalls of the verification itself (all three have already cost time):
 
-- переход по адресу, отличающемуся **только хэшем**, страницу не перезагружает — состояние
-  в памяти остаётся прежним, и подложенный в `localStorage` набор данных не подхватится;
-- service worker отдаёт прошлую сборку: перед проверкой снять регистрации и почистить
-  `caches`;
-- **не опрашивать прод циклом `curl`** — включается Vercel Security Checkpoint, и прод
-  начинает отдавать 403 на всё, включая манифест. Похоже на поломку, но проходит само.
+- navigating to an address that differs **only in the hash** does not reload the
+  page — the in-memory state stays as it was, and a data set planted in
+  `localStorage` will not be picked up;
+- the service worker serves the previous build: unregister service workers and
+  clear `caches` before verifying;
+- **do not poll production in a `curl` loop** — the Vercel Security Checkpoint
+  kicks in and production starts returning 403 for everything, including the
+  manifest. It looks like breakage, but it clears up on its own.
 
-## Состояние
+## Status
 
-Опубликовано: <https://games-table-bay.vercel.app>, репозиторий `mrWD/games-table`.
-Деплой автоматический при пуше в `main`. Короткий домен `games-table.vercel.app` был
-занят чужим проектом, отсюда суффикс `-bay`.
+Published at <https://games-table-bay.vercel.app>, repository `mrWD/games-table`.
+Deployment is automatic on a push to `main`. The short domain
+`games-table.vercel.app` was taken by somebody else's project, hence the `-bay`
+suffix.
 
-Ключ RAWG задан в переменных окружения Vercel — консольные игры находятся («zelda» даёт
-203 результата, включая Nintendo).
+The RAWG key is set in the Vercel environment variables — console games are found
+("zelda" returns 203 results, including Nintendo).
 
-Интерфейс **полностью англоязычный**: владелец потребовал этого явно после того, как
-заметил единственную русскую подпись в ссылках просмотра. Документация в `docs/` и этот
-файл остаются на русском — это внутренние документы, не интерфейс.
+The interface is **entirely in English**: the owner asked for this explicitly
+after noticing the single Russian label in the watch links. The documentation in
+`docs/` and this file are in English too.
 
-Контакты внутри приложения (Profile → Feedback & contact): `lvigtor@gmail.com` и
-<https://www.linkedin.com/in/viktor-lavrov>. Форма ничего не отправляет сама — собирает
-`mailto:` и отдаёт почтовому клиенту; бэкенда под неё нет и заводить его нельзя.
+Contacts inside the app (Profile → Feedback & contact): `lvigtor@gmail.com` and
+<https://www.linkedin.com/in/viktor-lavrov>. The form does not send anything by
+itself — it assembles a `mailto:` and hands it to the mail client; there is no
+backend for it and none may be added.
 
-Аналитики здесь нет вообще — в отличие от FilmTable, где стоит Vercel Web Analytics.
+There is no analytics here at all — unlike FilmTable, which has Vercel Web
+Analytics.
 
-## Открытые вопросы
+## Open questions
 
-- Vercel Web Analytics в GamesTable не подключена; владелец не просил.
-- Импорта из сторонних трекеров нет.
-- Текст поста в LinkedIn о проекте написан, но не опубликован.
+- Vercel Web Analytics is not wired into GamesTable; the owner has not asked for
+  it.
+- There is no import from third-party trackers.
+- The text of a LinkedIn post about the project is written but not published.
 
-## Тон общения с владельцем
+## Tone with the owner
 
-По-русски. Он ценит проверку фактов вместо предположений: перед утверждением о поведении
-API — сделать запрос и показать цифры. Крупные изменения — в отдельной ветке, с
-возможностью проверить до заливки.
+In Russian. He values verified facts over assumptions: before claiming anything
+about an API's behaviour, make the request and show the numbers. Large changes go
+into a separate branch so they can be reviewed before merging.

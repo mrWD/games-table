@@ -1,97 +1,104 @@
-# Источники данных
+# Data sources
 
-Всё ниже проверено запросами 2026-07-26, а не взято из документации. Если поведение
-изменится — перепроверьте и поправьте этот файл.
+Everything below was verified with requests on 2026-07-26 rather than taken from
+documentation. If the behaviour changes, re-check it and fix this file.
 
-## Сводка
+## Summary
 
-| Источник | Что даёт | Ключ | CORS | Роль |
+| Source | What it provides | Key | CORS | Role |
 |---|---|---|---|---|
-| **RAWG** | все платформы, обложки, рейтинги, даты | нужен, бесплатный | есть | основной каталог |
-| **Steam** | PC-игры: жанры, Metacritic, платформы, обложки | не нужен | **нет** | запасной, только PC |
-| **Wikidata** | названия и годы любых игр | не нужен | есть | последний рубеж, без обложек |
+| **RAWG** | all platforms, covers, ratings, dates | required, free | yes | primary catalogue |
+| **Steam** | PC games: genres, Metacritic, platforms, covers | not required | **no** | fallback, PC only |
+| **Wikidata** | titles and years for any game | not required | yes | last resort, no covers |
 
-## Главный вывод: Steam не видит консоли
+## The key finding: Steam does not see consoles
 
-Это определило всю архитектуру. Замеры поиска Steam:
+This determined the whole architecture. Steam search measurements:
 
-| Запрос | Найдено |
+| Query | Results |
 |---|---|
 | `elden ring` | 5 — ELDEN RING, Nightreign, Shadow of the Erdtree ✅ |
-| `witcher` | 10 — вся серия ✅ |
+| `witcher` | 10 — the whole series ✅ |
 | `zelda` | **0** |
-| `mario` | 10, но **ни одной игры Nintendo** — только посторонние инди |
+| `mario` | 10, but **not a single Nintendo game** — only unrelated indies |
 
-Причина очевидна: в каталоге Steam нет игр Nintendo и других консольных эксклюзивов.
-Для трекера, где человек ведёт и консольные игры, этого мало — «Zelda не находится»
-делает приложение бесполезным для половины аудитории. Отсюда RAWG как основной источник.
+The reason is obvious: the Steam catalogue has no Nintendo games or other console
+exclusives. For a tracker where a person also keeps console games, that is not
+enough — "Zelda cannot be found" makes the app useless for half the audience.
+Hence RAWG as the primary source.
 
 ## RAWG
 
-`https://api.rawg.io/api/games?search=...&key=KEY` — 500+ тысяч игр всех платформ,
-обложки, рейтинги, даты выхода, жанры, платформы.
+`https://api.rawg.io/api/games?search=...&key=KEY` — 500k+ games across all
+platforms, covers, ratings, release dates, genres, platforms.
 
-Без ключа отдаёт **401 Unauthorized** (проверено). Ключ бесплатный, выдаётся на
-rawg.io/apidocs, для некоммерческого использования условий достаточно.
+Without a key it returns **401 Unauthorized** (verified). The key is free, issued
+at rawg.io/apidocs, and the terms are fine for non-commercial use.
 
-Ключ хранится **только** в переменной окружения Vercel `RAWG_API_KEY` и подставляется
-прокси. В браузер он не попадает — в публичном репозитории это был бы опубликованный ключ.
+The key is stored **only** in the Vercel `RAWG_API_KEY` environment variable and
+injected by the proxy. It never reaches the browser — in a public repository that
+would be a published key.
 
 ## Steam
 
-Два эндпоинта без ключа:
+Two key-free endpoints:
 
-- `https://store.steampowered.com/api/storesearch/?term=QUERY&l=en&cc=US` — поиск,
-  возвращает `id`, `name`, `tiny_image`. До 10 результатов.
-- `https://store.steampowered.com/api/appdetails?appids=ID` — карточка: жанры, дата
-  выхода, оценка Metacritic, платформы (windows/mac/linux), `header_image`.
+- `https://store.steampowered.com/api/storesearch/?term=QUERY&l=en&cc=US` —
+  search, returns `id`, `name`, `tiny_image`. Up to 10 results.
+- `https://store.steampowered.com/api/appdetails?appids=ID` — details: genres,
+  release date, Metacritic score, platforms (windows/mac/linux), `header_image`.
 
-Проверено на The Witcher 3 (appid 292030): жанр RPG, Metacritic 93, дата 18 May 2015,
-обложка есть.
+Verified against The Witcher 3 (appid 292030): genre RPG, Metacritic 93, dated
+18 May 2015, cover present.
 
-**Ни один из них не отдаёт `Access-Control-Allow-Origin`** — из браузера напрямую не
-вызвать. Только через прокси. Это не прихоть, а измеренный факт.
+**Neither one sends `Access-Control-Allow-Origin`** — they cannot be called
+directly from the browser. Only through the proxy. That is a measured fact, not a
+preference.
 
-Изображения Steam при этом отображаются в `<img>` без проблем: картинкам CORS не нужен.
+Steam images do display fine in an `<img>` tag: images do not need CORS.
 
 ## Wikidata
 
-Работает без ключа и с `Access-Control-Allow-Origin: *`. SPARQL по `wdt:P31 wd:Q7889`
-(видеоигра) находит всю серию Witcher с годами выхода.
+Works without a key and with `Access-Control-Allow-Origin: *`. A SPARQL query on
+`wdt:P31 wd:Q7889` (video game) finds the whole Witcher series with release years.
 
-Но у большинства игр **нет изображений** (P18): в выборке из восьми игр обложка нашлась у
-одной. Для витрины с обложками не годится — только как аварийный источник названий,
-если и RAWG, и Steam недоступны. В v1 не используется.
+But most games have **no images** (P18): in a sample of eight games, one had a
+cover. Not suitable for a cover-driven UI — only as an emergency source of titles
+if both RAWG and Steam are unavailable. Not used in v1.
 
-## Отвергнуто после проверки
+## Rejected after testing
 
-- **CheapShark** — отдаёт 400 на запросы поиска; ориентирован на скидки, не на каталог.
-- **FreeToGame** — CORS есть, но каталог только free-to-play: 347 игр. Для трекера мало.
-- **SteamSpy** — нет CORS, и данные про статистику продаж, а не про каталог.
-- **IGDB** — лучшая база после RAWG, но требует OAuth-приложение Twitch, что сложнее
-  простого ключа. Кандидат на будущее, если RAWG подведёт.
+- **CheapShark** — returns 400 on search requests; oriented towards discounts, not
+  a catalogue.
+- **FreeToGame** — has CORS, but the catalogue is free-to-play only: 347 games. Too
+  little for a tracker.
+- **SteamSpy** — no CORS, and the data is about sales statistics, not the
+  catalogue.
+- **IGDB** — the best database after RAWG, but it requires a Twitch OAuth app,
+  which is harder than a plain key. A future candidate if RAWG lets us down.
 
-## Просмотр прохождений
+## Watching playthroughs
 
-API не нужен вообще. Кнопки ведут на поисковые адреса:
+No API is needed at all. The buttons lead to search URLs:
 
-- `https://www.youtube.com/results?search_query=<игра>+longplay+no+commentary`
-- `https://www.youtube.com/results?search_query=<игра>+game+movie+all+cutscenes`
-- `https://www.youtube.com/results?search_query=<игра>+walkthrough`
-- `https://www.youtube.com/results?search_query=<игра>+review`
-- `https://www.twitch.tv/search?term=<игра>`
+- `https://www.youtube.com/results?search_query=<game>+longplay+no+commentary`
+- `https://www.youtube.com/results?search_query=<game>+game+movie+all+cutscenes`
+- `https://www.youtube.com/results?search_query=<game>+walkthrough`
+- `https://www.youtube.com/results?search_query=<game>+review`
+- `https://www.twitch.tv/search?term=<game>`
 
-Запросы только английские: интерфейс приложения англоязычный целиком, и русскоязычный
-пресет из него убран.
+The queries are English only: the app's interface is entirely in English, and the
+Russian-language preset was removed from it.
 
-YouTube Data API требует ключ и имеет жёсткие квоты, а для сценария «хочу посмотреть»
-достаточно открыть готовую выдачу. Заодно ничего не встраивается и не отслеживается.
+The YouTube Data API requires a key and has hard quotas, whereas for the "want to
+watch" scenario opening a ready-made results page is enough. As a bonus, nothing
+is embedded and nothing is tracked.
 
-## Порядок обращения
+## Order of calls
 
-1. **RAWG** — если прокси развёрнут и ключ задан.
-2. **Steam** — если RAWG недоступен; работает без ключа, но только PC-игры.
-3. Если недоступно оба — честное сообщение об ошибке, а не пустой экран.
+1. **RAWG** — if the proxy is deployed and a key is set.
+2. **Steam** — if RAWG is unavailable; works without a key, but PC games only.
+3. If both are unavailable — an honest error message, not a blank screen.
 
-Как и в FilmTable, дополняющие запросы обёрнуты таймаутом, чтобы медленный источник не
-задерживал выдачу.
+As in FilmTable, supplementary requests are wrapped in a timeout so that a slow
+source does not hold up the results.
