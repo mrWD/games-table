@@ -20,9 +20,13 @@ look at the neighbouring project.
 
 ## Principles (do not break without the owner's explicit consent)
 
-1. **The library lives on the device.** `localStorage`, no accounts, no data
-   collection. There is exactly as much server code as it takes to hide the key
-   and work around the missing CORS — and it stores nothing.
+1. **The library lives on the device.** `localStorage`, no accounts, nothing
+   personal collected. There is exactly as much server code as it takes to hide
+   the key and work around the missing CORS — and it stores nothing. The one
+   exception is `src/components/Analytics.tsx`: on a `.vercel.app` host it reports
+   cookieless screen-view counts to Vercel Web Analytics. It sends a screen name
+   and never a title, a search term or an identifier, and it stays inert
+   everywhere else.
 2. **Watching is a first-class scenario.** The watch track is symmetric to the
    play track: want to watch → watching → watched. Do not collapse it back into a
    single status.

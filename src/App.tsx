@@ -10,6 +10,7 @@ import { watchSystemTheme } from './store/theme'
 import { beginSessionOnce, useStats } from './store/stats'
 import { SupportFab } from './components/Support'
 import { InstallHint } from './components/InstallHint'
+import { Analytics } from './components/Analytics'
 
 function Shell() {
   const location = useLocation()
@@ -43,6 +44,7 @@ function Shell() {
       <SupportFab />
       <ToastHost />
       <ConfirmHost />
+      <Analytics />
     </div>
   )
 }
