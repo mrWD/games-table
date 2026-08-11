@@ -30,6 +30,21 @@ const API_BASE = (
 /** Set once the proxy proves absent, so we stop retrying on every keystroke. */
 let rawgDisabled = false
 
+/**
+ * A deadline, because this proxy is the app's only source.
+ *
+ * Measured against production while RAWG's own API was down: a failing request took
+ * 19.5 seconds to come back, and Explore sat on loading skeletons for all of it — the
+ * app read as hung rather than unlucky. FilmTable and BooksTable never had this
+ * problem; their supplementary sources are wrapped in short timeouts and a primary
+ * source answers regardless. Here every catalogue call goes through the proxy, so the
+ * deadline belongs here.
+ *
+ * Eight seconds: clear of a slow mobile round trip, still inside the span of someone's
+ * attention.
+ */
+const REQUEST_TIMEOUT_MS = 8000
+
 async function proxy<T>(
   source: 'rawg' | 'steam',
   path: string,
@@ -39,15 +54,22 @@ async function proxy<T>(
   if (source === 'rawg' && rawgDisabled) return null
   const qs = new URLSearchParams({ source, path, ...params }).toString()
   try {
-    const res = await fetch(`${API_BASE}/api/games?${qs}`)
+    const res = await fetch(`${API_BASE}/api/games?${qs}`, {
+      signal: AbortSignal.timeout?.(REQUEST_TIMEOUT_MS),
+    })
     if (res.status === 503 || res.status === 404 || res.status === 403) {
       if (source === 'rawg') rawgDisabled = true
       return null
     }
     if (!res.ok) return null
     return (await res.json()) as T
-  } catch {
-    if (source === 'rawg') rawgDisabled = true
+  } catch (err) {
+    // A timeout says "too slow right now", not "not there". Treating the two alike
+    // would let one slow moment disable RAWG — and with it every console game — for
+    // the rest of the session.
+    const name = err instanceof Error ? err.name : ''
+    const timedOut = name === 'TimeoutError' || name === 'AbortError'
+    if (source === 'rawg' && !timedOut) rawgDisabled = true
     return null
   }
 }
