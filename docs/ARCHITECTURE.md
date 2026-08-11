@@ -169,28 +169,30 @@ on RPG, which The Witcher already covered.
 
 ## Storage: how much fits and what is wrong with it
 
-Measurements in Chromium (July 2026): localStorage caps out at **4.94 MB** per
-origin, even when `navigator.storage.estimate()` reports 10 GB — it has its own
-quota.
+Since 2026-08 the library lives in IndexedDB (`gamestable-kv`, adapter in
+`lib/idb-storage.ts`), whose quota is measured in gigabytes, so size is no
+longer the pressing constraint. The history still explains the code:
+localStorage capped out at **4.94 MB** per origin in Chromium (measured July
+2026), even when `navigator.storage.estimate()` reported 10 GB.
 
 The size of a record, measured across twenty real RAWG responses: **507 B** per
-game. A thousand games is 480 KB, a tenth of the limit. With the description a
+game. A thousand games is 480 KB. With the description a
 record weighed 1,229 B instead of 407 (Elden Ring, a 778-character description) —
 meaning 60% of the library's weight was data that is never displayed anywhere.
 
-Three things follow from this, and all three are already done:
+What the localStorage era left behind, and what remains true:
 
-- **`description` is not written to storage.** It is re-fetched every time the
-  detail page opens and is never shown in lists, yet it tripled the size of a
-  record. It is stripped via `partialize` and kept in memory for the session. For
-  records added earlier, the description disappears on the very first write to the
-  library — `partialize` applies to the whole store at once.
-- **`QuotaExceededError` is caught.** Without that, the exception was thrown in the
-  middle of an update, the change was silently lost, and the person found out much
-  later.
+- **`description` is still not written to storage.** It is re-fetched every time
+  the detail page opens and is never shown in lists; writing it would only
+  inflate the library and the backup file. It is stripped via `partialize` and
+  kept in memory for the session.
+- **Write failures are still caught** — in `idb-storage.ts` now. A failed write
+  toasts once and asks for an export instead of silently losing the change.
 - **The app offers to install itself to the home screen.** This is not marketing:
   Safari clears script storage for sites that have not been visited in a while, and
   the rule does not apply to installed apps. That is what the prompt's text says.
+  This applies to IndexedDB exactly as it did to localStorage — moving between
+  them changes quotas, not eviction.
 
 The cost of writing is not a problem: zustand serialises the whole store on every
 change, but at 2,000 games (2.5 MB) that is 4.5 ms to serialise and 1.8 ms to

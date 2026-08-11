@@ -55,6 +55,19 @@ In FilmTable, series live in a separate cache with a TTL because new episodes co
 out. A game's metadata does not change, so the whole record is stored in the
 library. Simpler, and the library reads fully offline.
 
+## IndexedDB instead of localStorage (2026-08)
+
+Same decision as FilmTable's, made at the same time and with the owner's
+explicit consent: the library moved to IndexedDB (`gamestable-kv`, adapter in
+`lib/idb-storage.ts`) to shed the ~5 MB ceiling and to be on the storage a
+native wrapper migrates from when the app goes to the stores. The old
+localStorage value is copied once on first read and left frozen, so a rollback
+finds the library as of the migration moment. Hydration became asynchronous —
+`main.tsx` holds the first render until it settles. Small prefs (`theme`,
+`stats`) stay in localStorage; `theme` must be readable synchronously or the
+first paint flashes the wrong theme. Exporting a backup on iOS goes through the
+share sheet (`lib/export.ts`) because File System Access does not exist there.
+
 ## Lessons from FilmTable — do not repeat them
 
 - **Vercel and `"type": "module"`.** The function must be ESM (`export default`).

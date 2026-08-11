@@ -5,6 +5,7 @@ import { useUi } from '../store/ui'
 import { useTheme, type ThemeChoice } from '../store/theme'
 import { useStats } from '../store/stats'
 import { AutoBackup } from '../components/AutoBackup'
+import { exportJsonFile } from '../lib/export'
 import { formatHours } from '../lib/format'
 import { IconDownload, IconPad, IconTrash, IconUpload } from '../components/Icons'
 import { SupportLinks } from '../components/Support'
@@ -64,14 +65,10 @@ export default function ProfilePage() {
 
   const stats = buildStats(games)
 
-  const doExport = () => {
-    const blob = new Blob([JSON.stringify(buildBackup(), null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `gamestable-backup-${new Date().toISOString().slice(0, 10)}.json`
-    a.click()
-    URL.revokeObjectURL(url)
+  const doExport = async () => {
+    const name = `gamestable-backup-${new Date().toISOString().slice(0, 10)}.json`
+    const outcome = await exportJsonFile(buildBackup(), name)
+    if (outcome === 'cancelled') return
     useStats.getState().recordExport()
     showToast('Backup exported')
   }
@@ -166,7 +163,7 @@ export default function ProfilePage() {
       <h2 className="h2">Data</h2>
       <BackupNudge items={Object.keys(games).length} />
       <div className="datacard">
-        <button className="datarow" onClick={doExport}>
+        <button className="datarow" onClick={() => void doExport()}>
           <IconDownload size={20} />
           <div>
             <div className="datarow-title">Export backup</div>
