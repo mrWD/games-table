@@ -1,3 +1,4 @@
+import { isNativeApp } from 'tables-core'
 import type { GameSummary } from './types'
 import { stats } from '../store/stats'
 
@@ -8,9 +9,23 @@ import { stats } from '../store/stats'
  */
 
 /**
- * The path is always same-origin: on Vercel the function lives at /api/games, and in
- * dev Vite proxies /api to the local harness (see vite.config.ts).
+ * On the web the proxy is same-origin: on Vercel the function lives at /api/games, and
+ * in dev Vite proxies /api to the local harness (see vite.config.ts).
+ *
+ * The native app has no origin to be same as — it is served from capacitor://localhost —
+ * so it must call the deployment by its full address. `VITE_API_BASE` still wins when
+ * set, but the fallback is deliberate rather than empty: a build that quietly shipped to
+ * a store with no base would have no search at all, and forgetting one environment
+ * variable is not a failure worth risking that on.
+ *
+ * The proxy needs no change to allow this. Its origin check parses `capacitor://localhost`
+ * to the host `localhost`, which its loopback rule already permits.
  */
+const PRODUCTION_API = 'https://games-table-bay.vercel.app'
+
+const API_BASE = (
+  (import.meta.env.VITE_API_BASE as string | undefined) ?? (isNativeApp() ? PRODUCTION_API : '')
+).replace(/\/$/, '')
 
 /** Set once the proxy proves absent, so we stop retrying on every keystroke. */
 let rawgDisabled = false
@@ -24,7 +39,7 @@ async function proxy<T>(
   if (source === 'rawg' && rawgDisabled) return null
   const qs = new URLSearchParams({ source, path, ...params }).toString()
   try {
-    const res = await fetch(`/api/games?${qs}`)
+    const res = await fetch(`${API_BASE}/api/games?${qs}`)
     if (res.status === 503 || res.status === 404 || res.status === 403) {
       if (source === 'rawg') rawgDisabled = true
       return null

@@ -1,7 +1,8 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 import type { BackupFile, GameStatus, GameSummary, TrackedGame } from '../lib/types'
-import { idbStorage } from '../lib/idb-storage'
+import { successFeedback, tapFeedback } from '../lib/native-ui'
+import { deviceStorage } from '../lib/storage'
 import { useStats } from './stats'
 
 /**
@@ -60,6 +61,9 @@ export const useLibrary = create<LibraryState>()(
       setStatus: (game, status) => {
         // Outside the updater on purpose: StrictMode runs it twice.
         useStats.getState().recordStatusChange()
+        // Reaching an end state is the moment worth feeling; the rest is a tick.
+        if (status === 'played' || status === 'watched') successFeedback()
+        else tapFeedback()
         set((s) => {
           const now = Date.now()
           const existing = s.games[game.id]
@@ -72,6 +76,8 @@ export const useLibrary = create<LibraryState>()(
 
       changeStatus: (id, status) => {
         useStats.getState().recordStatusChange()
+        if (status === 'played' || status === 'watched') successFeedback()
+        else tapFeedback()
         set((s) => {
           const g = s.games[id]
           if (!g) return s
@@ -137,10 +143,10 @@ export const useLibrary = create<LibraryState>()(
     {
       name: 'gamestable-library-v1',
       version: 1,
-      // IndexedDB via idbStorage: no ~5 MB localStorage ceiling, and the value migrates
-      // once from localStorage on first load (see idb-storage.ts). Hydration is async —
-      // main.tsx holds the first render until it settles.
-      storage: createJSONStorage(() => idbStorage),
+      // IndexedDB in a browser, a file in private app storage natively — and one
+      // migration each way behind it (see lib/storage.ts). Hydration is async either
+      // way, so main.tsx holds the first render until it settles.
+      storage: createJSONStorage(() => deviceStorage),
       // Descriptions are re-fetched whenever a detail page opens and are never shown in a
       // list, yet storing them tripled a game entry — 407 bytes to 1229 for Elden Ring.
       // Keep them in memory for the session; never write them.

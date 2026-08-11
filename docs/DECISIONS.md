@@ -58,15 +58,15 @@ library. Simpler, and the library reads fully offline.
 ## IndexedDB instead of localStorage (2026-08)
 
 Same decision as FilmTable's, made at the same time and with the owner's
-explicit consent: the library moved to IndexedDB (`gamestable-kv`, adapter in
-`lib/idb-storage.ts`) to shed the ~5 MB ceiling and to be on the storage a
+explicit consent: the library moved to IndexedDB (`gamestable-kv`, adapter now
+`createDeviceStorage` in `tables-core`) to shed the ~5 MB ceiling and to be on the storage a
 native wrapper migrates from when the app goes to the stores. The old
 localStorage value is copied once on first read and left frozen, so a rollback
 finds the library as of the migration moment. Hydration became asynchronous —
 `main.tsx` holds the first render until it settles. Small prefs (`theme`,
 `stats`) stay in localStorage; `theme` must be readable synchronously or the
 first paint flashes the wrong theme. Exporting a backup on iOS goes through the
-share sheet (`lib/export.ts`) because File System Access does not exist there.
+share sheet because File System Access does not exist there.
 
 ## Lessons from FilmTable — do not repeat them
 
@@ -102,3 +102,37 @@ share sheet (`lib/export.ts`) because File System Access does not exist there.
 - Game recommendations (by genre and platform, as in FilmTable) — after v1.
 - Completion times: HowLongToBeat has no public API, so hours are entered manually.
   If a source turns up, an estimate could be pre-filled.
+
+## Wrapped for the stores with Capacitor (2026-08)
+
+The same Vite build, inside a native shell: `webDir` is the ordinary `dist`, so
+a release is `npm run build` plus `npx cap sync`. `HashRouter` already suited the
+`capacitor://localhost` origin, so routing needed nothing.
+
+The library moved again, from IndexedDB to a JSON file in private app storage
+(`createDeviceStorage` in `tables-core`). A WebView's IndexedDB is *site data* to
+the OS: iOS may reclaim it under storage pressure and "Offload App" discards it,
+while a file in the app container survives both and rides along in the device
+backup. Same one-way copy as before — read once, write the file, leave the old
+value frozen.
+
+Two findings from the pilot, both already paid for:
+
+- **Every browser test for installedness answers "no" inside the WebView**, so
+  the app offered to add itself to the home screen while already installed.
+  `isNativeApp()` in `tables-core` is the fix.
+- **The status bar icons follow the system, not this app's theme.** Measured on
+  targetSdk 36: the web view is inset by 24 CSS px top and bottom,
+  `env(safe-area-inset-*)` reads 0, and those strips are painted with the window
+  background — which comes from the `DayNight` theme and so follows the system.
+  Driving the icons from the app's theme puts white icons on a white strip the
+  moment someone picks Dark on a light phone. Known cost: with the theme
+  overridden against the system, those strips keep the system's colour.
+
+The native build reaches `/api/games` by absolute URL — there is no origin for it
+to be same as, and unlike FilmTable every catalogue call goes through the proxy,
+so without this there would be no search at all. `VITE_API_BASE` still wins; the
+fallback to the production address keeps a store build from shipping searchless.
+The proxy needed no change: verified against production, a request carrying
+`Origin: capacitor://localhost` is answered 200, because the origin parses to the
+host `localhost` and the loopback rule already permits it.
