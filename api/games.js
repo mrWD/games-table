@@ -13,7 +13,10 @@ const STEAM_STORE = 'https://store.steampowered.com/api/'
 const ALLOWED = {
   rawg: (path) =>
     path === 'games' || path === 'genres' || /^games\/[\w.-]+$/.test(path),
-  steam: (path) => path === 'storesearch' || path === 'appdetails',
+  // `featuredcategories` is what keeps Explore from being an empty screen when RAWG
+  // is unreachable: it is the only keyless list of games with cover art we have.
+  steam: (path) =>
+    path === 'storesearch' || path === 'appdetails' || path === 'featuredcategories',
 }
 
 function cacheFor(source, path) {

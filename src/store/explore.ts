@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { popularGames, searchGames, upcomingGames } from '../lib/api'
+import { popularGames, searchGames, upcomingGames, type DiscoverSource } from '../lib/api'
 import type { GameSummary } from '../lib/types'
 import { stats } from './stats'
 
@@ -12,6 +12,7 @@ interface ExploreState {
   popular: GameSummary[]
   upcoming: GameSummary[]
   discoverLoading: boolean
+  discoverSource: DiscoverSource
 
   setQuery: (q: string) => void
   runSearch: (q: string) => Promise<void>
@@ -29,6 +30,7 @@ export const useExplore = create<ExploreState>((set, get) => ({
   popular: [],
   upcoming: [],
   discoverLoading: false,
+  discoverSource: 'rawg',
 
   setQuery: (query) => set({ query }),
 
@@ -54,10 +56,18 @@ export const useExplore = create<ExploreState>((set, get) => ({
   loadDiscover: async () => {
     if (get().popular.length > 0 || get().discoverLoading) return
     set({ discoverLoading: true })
+    const empty = { games: [] as GameSummary[], source: 'rawg' as DiscoverSource }
     const [popular, upcoming] = await Promise.all([
-      popularGames().catch(() => [] as GameSummary[]),
-      upcomingGames().catch(() => [] as GameSummary[]),
+      popularGames().catch(() => empty),
+      upcomingGames().catch(() => empty),
     ])
-    set({ popular, upcoming, discoverLoading: false })
+    set({
+      popular: popular.games,
+      upcoming: upcoming.games,
+      // Either section can fall back on its own; the screen labels itself from
+      // whichever actually produced games.
+      discoverSource: popular.games.length ? popular.source : upcoming.source,
+      discoverLoading: false,
+    })
   },
 }))

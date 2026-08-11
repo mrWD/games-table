@@ -136,3 +136,26 @@ fallback to the production address keeps a store build from shipping searchless.
 The proxy needed no change: verified against production, a request carrying
 `Origin: capacitor://localhost` is answered 200, because the origin parses to the
 host `localhost` and the loopback rule already permits it.
+
+## Discover falls back to Steam's storefront (2026-08-11)
+
+RAWG went down and Explore had nothing to show: both discover sections were RAWG-only,
+so the whole screen collapsed to one apologetic sentence. Search was fine — it already
+falls back to Steam — which made the asymmetry obvious.
+
+Steam's `featuredcategories` now fills those sections when RAWG returns nothing. It
+needs no key, answers in 0.27 s and carries cover art. The sections rename themselves to
+"New on Steam" and "Coming soon on Steam", because a PC-only list is a **narrower**
+answer, not an equal one, and the screen should not imply otherwise.
+
+`top_sellers` is not used even though it sounds like the better match for "Popular now":
+measured during a Valve hardware launch it returned four "Steam Machine" entries and a
+controller, and nothing in the payload separates hardware from games.
+
+This does not restore console games — Steam has none, which is the finding this whole
+architecture is built on. It restores a populated screen and PC discovery. The real fix
+for consoles is a second keyed catalogue (IGDB); see DATA-SOURCES.
+
+Note for deploying: the proxy allowlist gained `featuredcategories`, so the fallback only
+works once `api/games.js` is deployed. Until then the app behaves exactly as before.
+

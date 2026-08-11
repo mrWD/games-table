@@ -232,15 +232,82 @@ export async function lookupGame(id: string): Promise<GameSummary | null> {
 }
 
 /** Explore shelves: popular now and what is coming next. */
-export async function popularGames(): Promise<GameSummary[]> {
+interface SteamFeaturedItem {
+  id: number
+  name?: string
+  header_image?: string
+  large_capsule_image?: string
+}
+
+interface SteamFeatured {
+  new_releases?: { items?: SteamFeaturedItem[] }
+  coming_soon?: { items?: SteamFeaturedItem[] }
+}
+
+/**
+ * Steam's own storefront lists, used when RAWG cannot answer.
+ *
+ * Fetched once per session and shared: both discover sections come out of the same
+ * payload, and asking twice for it would double the wait for no new information.
+ */
+let featuredOnce: Promise<SteamFeatured | null> | null = null
+function steamFeatured(): Promise<SteamFeatured | null> {
+  featuredOnce ??= proxy<SteamFeatured>('steam', 'featuredcategories', { cc: 'us', l: 'en' })
+  return featuredOnce
+}
+
+/**
+ * `top_sellers` is deliberately not used. Measured during a Valve hardware launch it
+ * returned four copies of "Steam Machine" and a controller — the list mixes hardware
+ * with games and nothing in the payload separates them (`type` is 0 for both). The
+ * release lists are games in practice, and duplicates are dropped by title anyway.
+ */
+function mapFeatured(items: SteamFeaturedItem[] | undefined): GameSummary[] {
+  const seen = new Set<string>()
+  const out: GameSummary[] = []
+  for (const item of items ?? []) {
+    const title = item.name?.trim()
+    if (!title) continue
+    const key = title.toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push({
+      id: `steam:${item.id}`,
+      title,
+      cover: item.large_capsule_image ?? item.header_image ?? null,
+      released: null,
+      genres: [],
+      platforms: ['PC'],
+      metacritic: null,
+      rating: null,
+    })
+    if (out.length === 12) break
+  }
+  return out
+}
+
+/**
+ * The two discover sections say where they came from, because the answers are not
+ * equivalent: RAWG covers every platform, Steam only PC. The screen names its source
+ * rather than passing a narrower list off as the same thing.
+ */
+export type DiscoverSource = 'rawg' | 'steam'
+export interface Discover {
+  games: GameSummary[]
+  source: DiscoverSource
+}
+
+export async function popularGames(): Promise<Discover> {
   const data = await proxy<{ results?: RawgGame[] }>('rawg', 'games', {
     ordering: '-added',
     page_size: '12',
   })
-  return (data?.results ?? []).map(mapRawg)
+  if (data?.results?.length) return { games: data.results.map(mapRawg), source: 'rawg' }
+  const featured = await steamFeatured()
+  return { games: mapFeatured(featured?.new_releases?.items), source: 'steam' }
 }
 
-export async function upcomingGames(): Promise<GameSummary[]> {
+export async function upcomingGames(): Promise<Discover> {
   const today = new Date().toISOString().slice(0, 10)
   const inAYear = new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10)
   const data = await proxy<{ results?: RawgGame[] }>('rawg', 'games', {
@@ -248,5 +315,7 @@ export async function upcomingGames(): Promise<GameSummary[]> {
     ordering: 'released',
     page_size: '12',
   })
-  return (data?.results ?? []).map(mapRawg)
+  if (data?.results?.length) return { games: data.results.map(mapRawg), source: 'rawg' }
+  const featured = await steamFeatured()
+  return { games: mapFeatured(featured?.coming_soon?.items), source: 'steam' }
 }

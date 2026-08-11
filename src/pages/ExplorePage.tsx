@@ -59,7 +59,7 @@ function ForYou() {
 }
 
 export default function ExplorePage() {
-  const { query, results, searching, failed, popular, upcoming, discoverLoading, setQuery, runSearch, loadDiscover } =
+  const { query, results, searching, failed, popular, upcoming, discoverLoading, discoverSource, setQuery, runSearch, loadDiscover } =
     useExplore()
   const debounce = useRef<ReturnType<typeof setTimeout>>(undefined)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -123,7 +123,7 @@ export default function ExplorePage() {
           {discoverLoading && popular.length === 0 && <SkeletonRows count={3} />}
           {popular.length > 0 && (
             <section>
-              <SectionLabel>Popular now</SectionLabel>
+              <SectionLabel>{discoverSource === 'steam' ? 'New on Steam' : 'Popular now'}</SectionLabel>
               {popular.map((game) => (
                 <GameResultRow key={game.id} game={game} />
               ))}
@@ -131,7 +131,9 @@ export default function ExplorePage() {
           )}
           {upcoming.length > 0 && (
             <section>
-              <SectionLabel>Coming soon</SectionLabel>
+              <SectionLabel>
+                {discoverSource === 'steam' ? 'Coming soon on Steam' : 'Coming soon'}
+              </SectionLabel>
               {upcoming.map((game) => (
                 <GameResultRow key={game.id} game={game} />
               ))}
