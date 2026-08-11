@@ -5,6 +5,23 @@ import { GameResultRow } from '../components/cards'
 import { SectionLabel, SkeletonRows } from '../components/ui'
 import { IconSearch, IconX } from '../components/Icons'
 
+/**
+ * What to say when the catalogue answers nothing.
+ *
+ * There are two different situations behind that, and only one of them is the
+ * reader's business. Running `npm run dev` without the proxy is a developer's own
+ * doing, and the fix is a command. Everywhere else — the deployed site, and the
+ * installed app on someone's phone — the proxy is running and the outage is upstream
+ * at RAWG or Steam; telling that person to "start it locally, or deploy it" is advice
+ * they cannot act on and reads as the app being broken.
+ *
+ * `import.meta.env.DEV` is exactly the line between the two: true only under the dev
+ * server, false in every build that ships.
+ */
+const CATALOGUE_DOWN = import.meta.env.DEV
+  ? 'Catalogue unavailable. Both sources are reached through a small proxy — start it locally, or deploy it, and search will work.'
+  : 'The games catalogue is not answering right now. This is on their side, not yours — your library is untouched. Try again later.'
+
 function ForYou() {
   const { items, loading, error, taste, load } = useRecommend()
 
@@ -96,9 +113,7 @@ export default function ExplorePage() {
             results.map((game) => <GameResultRow key={game.id} game={game} />)}
           {!searching && results.length === 0 && (
             <p className="hint">
-              {failed
-                ? 'Nothing found. If this keeps happening, the catalogue proxy may be unreachable.'
-                : `No games found for “${query.trim()}”.`}
+              {failed ? CATALOGUE_DOWN : `No games found for “${query.trim()}”.`}
             </p>
           )}
         </>
@@ -123,10 +138,7 @@ export default function ExplorePage() {
             </section>
           )}
           {!discoverLoading && popular.length === 0 && upcoming.length === 0 && (
-            <p className="hint">
-              Catalogue unavailable. Both sources are reached through a small proxy — start it
-              locally, or deploy it, and search will work.
-            </p>
+            <p className="hint">{CATALOGUE_DOWN}</p>
           )}
           <p className="attribution">
             Game data from{' '}
