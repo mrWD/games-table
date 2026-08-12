@@ -46,7 +46,7 @@ let rawgDisabled = false
 const REQUEST_TIMEOUT_MS = 8000
 
 async function proxy<T>(
-  source: 'rawg' | 'steam',
+  source: 'rawg' | 'steam' | 'igdb',
   path: string,
   params: Record<string, string> = {},
 ): Promise<T | null> {
@@ -182,6 +182,15 @@ export async function searchGames(query: string): Promise<GameSummary[]> {
     return viaRawg.results.map(mapRawg)
   }
 
+  // IGDB before Steam, and the order is the whole point: it covers consoles, so
+  // "zelda" and "mario" still return Nintendo titles when RAWG cannot answer. Steam
+  // returns nothing for either (measured — see DATA-SOURCES).
+  const viaIgdb = await proxy<IgdbGame[]>('igdb', 'games', { search: term, limit: '20' })
+  if (viaIgdb?.length) {
+    stats.source('igdb')
+    return viaIgdb.map(mapIgdb)
+  }
+
   // Steam only knows PC titles, so this is a narrower answer, not an equal one.
   const viaSteam = await proxy<{ items?: SteamSearchItem[] }>('steam', 'storesearch', {
     term,
@@ -232,6 +241,48 @@ export async function lookupGame(id: string): Promise<GameSummary | null> {
 }
 
 /** Explore shelves: popular now and what is coming next. */
+/**
+ * IGDB — the second catalogue, and the only one besides RAWG that has both console
+ * games and cover art. Steam has neither for consoles; the keyless sources measured in
+ * DATA-SOURCES have the games but not the art, because cover art is copyrighted.
+ *
+ * Ids are prefixed `igdb:` so an entry saved from here stays distinguishable from the
+ * same game saved via RAWG or Steam.
+ */
+interface IgdbGame {
+  id: number
+  name?: string
+  cover?: { image_id?: string }
+  first_release_date?: number
+  genres?: { name: string }[]
+  platforms?: { name: string }[]
+  total_rating?: number
+  aggregated_rating?: number
+  summary?: string
+}
+
+function mapIgdb(g: IgdbGame): GameSummary {
+  return {
+    id: `igdb:${g.id}`,
+    title: g.name ?? '',
+    // t_cover_big is 264×374 — the size the cards actually render.
+    cover: g.cover?.image_id
+      ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${g.cover.image_id}.jpg`
+      : null,
+    released: g.first_release_date
+      ? new Date(g.first_release_date * 1000).toISOString().slice(0, 10)
+      : null,
+    genres: (g.genres ?? []).map((x) => x.name).slice(0, 3),
+    platforms: (g.platforms ?? []).map((x) => x.name).slice(0, 6),
+    // IGDB's aggregated_rating is the critic score, which is what the badge means
+    // elsewhere in this app; total_rating mixes in user votes, so it is not the same
+    // number and is deliberately not shown as one.
+    metacritic: g.aggregated_rating ? Math.round(g.aggregated_rating) : null,
+    rating: g.total_rating ? Math.round(g.total_rating) / 20 : null,
+    description: g.summary,
+  }
+}
+
 interface SteamFeaturedItem {
   id: number
   name?: string
@@ -291,7 +342,7 @@ function mapFeatured(items: SteamFeaturedItem[] | undefined): GameSummary[] {
  * equivalent: RAWG covers every platform, Steam only PC. The screen names its source
  * rather than passing a narrower list off as the same thing.
  */
-export type DiscoverSource = 'rawg' | 'steam'
+export type DiscoverSource = 'rawg' | 'igdb' | 'steam'
 export interface Discover {
   games: GameSummary[]
   source: DiscoverSource
@@ -303,6 +354,8 @@ export async function popularGames(): Promise<Discover> {
     page_size: '12',
   })
   if (data?.results?.length) return { games: data.results.map(mapRawg), source: 'rawg' }
+  const viaIgdb = await proxy<IgdbGame[]>('igdb', 'games', { limit: '12' })
+  if (viaIgdb?.length) return { games: viaIgdb.map(mapIgdb), source: 'igdb' }
   const featured = await steamFeatured()
   return { games: mapFeatured(featured?.new_releases?.items), source: 'steam' }
 }
@@ -316,6 +369,8 @@ export async function upcomingGames(): Promise<Discover> {
     page_size: '12',
   })
   if (data?.results?.length) return { games: data.results.map(mapRawg), source: 'rawg' }
+  const viaIgdb = await proxy<IgdbGame[]>('igdb', 'games', { upcoming: '1', limit: '12' })
+  if (viaIgdb?.length) return { games: viaIgdb.map(mapIgdb), source: 'igdb' }
   const featured = await steamFeatured()
   return { games: mapFeatured(featured?.coming_soon?.items), source: 'steam' }
 }
