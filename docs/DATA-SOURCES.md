@@ -9,6 +9,7 @@ documentation. If the behaviour changes, re-check it and fix this file.
 |---|---|---|---|---|
 | **RAWG** | all platforms, covers, ratings, dates | required, free | yes | primary catalogue |
 | **Steam** | PC games: genres, Metacritic, platforms, covers | not required | **no** | fallback, PC only |
+| **IGDB** | consoles, covers, ratings, platforms | required, free | via proxy | second catalogue |
 | **Wikidata** | titles and years for any game | not required | yes | rejected again, see below |
 | **Wikipedia** | titles, years, descriptions | not required | yes | rejected, almost no covers |
 | **Steam featured** | PC storefront lists with covers | not required | **no** | discover fallback |
@@ -146,10 +147,21 @@ Same SPARQL shape as 2026-07-26, re-run: 61 distinct Zelda games, **3 with image
 the query took **19.6 s** — longer than the 8 s request deadline the client now enforces.
 Release years also come back as re-release dates (Ocarina of Time as 2007). Not viable.
 
-### What is still missing
+### IGDB — added, and it closes the gap
 
-No keyless source has both console coverage and cover art, because cover art is
-copyrighted. Closing that gap needs a second **keyed** catalogue — IGDB is the obvious
-candidate (consoles + covers, free for non-commercial use, Twitch OAuth credentials held
-server-side like `RAWG_API_KEY`). Not done: it needs the owner to register a Twitch
-application.
+Measured against production on 2026-08-12, through our proxy:
+
+| Query | Results | With cover | On Nintendo platforms | Time |
+|---|---|---|---|---|
+| `zelda` | 20 | **20** | 16 | **0.11 s** |
+| `mario` | 20 | 19 | 12 | 0.48 s |
+| `elden ring` | 18 | 18 | 4 | 0.49 s |
+
+Set beside the alternatives measured the same day — Steam returns 0 for `zelda`,
+Wikidata managed 3 covers out of 61 in 19.6 s, Wikipedia 1 cover out of 8 — this is the
+only source besides RAWG that satisfies principle 3 in CLAUDE.md.
+
+Authentication is a Twitch client-credentials token (`IGDB_CLIENT_ID` /
+`IGDB_CLIENT_SECRET` in the Vercel environment, never in the bundle), cached per warm
+proxy instance. IGDB speaks its own query language over POST with a text body; the proxy
+translates the client's ordinary GET, so that protocol never reaches the browser.
