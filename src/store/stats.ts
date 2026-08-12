@@ -9,7 +9,7 @@ import { persist } from 'zustand/middleware'
  * data never leaves the device and is not part of the library backup.
  */
 
-export type SourceName = 'rawg' | 'steam'
+export type SourceName = 'rawg' | 'igdb' | 'steam'
 
 /** Keeping ~13 weeks is enough for the activity strip without growing forever. */
 const MAX_DAYS = 90
