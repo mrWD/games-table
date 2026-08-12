@@ -1,3 +1,4 @@
+import { isNativeApp } from 'tables-core'
 import type { GameSummary } from './types'
 import { stats } from '../store/stats'
 
@@ -8,12 +9,41 @@ import { stats } from '../store/stats'
  */
 
 /**
- * The path is always same-origin: on Vercel the function lives at /api/games, and in
- * dev Vite proxies /api to the local harness (see vite.config.ts).
+ * On the web the proxy is same-origin: on Vercel the function lives at /api/games, and
+ * in dev Vite proxies /api to the local harness (see vite.config.ts).
+ *
+ * The native app has no origin to be same as — it is served from capacitor://localhost —
+ * so it must call the deployment by its full address. `VITE_API_BASE` still wins when
+ * set, but the fallback is deliberate rather than empty: a build that quietly shipped to
+ * a store with no base would have no search at all, and forgetting one environment
+ * variable is not a failure worth risking that on.
+ *
+ * The proxy needs no change to allow this. Its origin check parses `capacitor://localhost`
+ * to the host `localhost`, which its loopback rule already permits.
  */
+const PRODUCTION_API = 'https://games-table-bay.vercel.app'
+
+const API_BASE = (
+  (import.meta.env.VITE_API_BASE as string | undefined) ?? (isNativeApp() ? PRODUCTION_API : '')
+).replace(/\/$/, '')
 
 /** Set once the proxy proves absent, so we stop retrying on every keystroke. */
 let rawgDisabled = false
+
+/**
+ * A deadline, because this proxy is the app's only source.
+ *
+ * Measured against production while RAWG's own API was down: a failing request took
+ * 19.5 seconds to come back, and Explore sat on loading skeletons for all of it — the
+ * app read as hung rather than unlucky. FilmTable and BooksTable never had this
+ * problem; their supplementary sources are wrapped in short timeouts and a primary
+ * source answers regardless. Here every catalogue call goes through the proxy, so the
+ * deadline belongs here.
+ *
+ * Eight seconds: clear of a slow mobile round trip, still inside the span of someone's
+ * attention.
+ */
+const REQUEST_TIMEOUT_MS = 8000
 
 async function proxy<T>(
   source: 'rawg' | 'steam',
@@ -24,15 +54,22 @@ async function proxy<T>(
   if (source === 'rawg' && rawgDisabled) return null
   const qs = new URLSearchParams({ source, path, ...params }).toString()
   try {
-    const res = await fetch(`/api/games?${qs}`)
+    const res = await fetch(`${API_BASE}/api/games?${qs}`, {
+      signal: AbortSignal.timeout?.(REQUEST_TIMEOUT_MS),
+    })
     if (res.status === 503 || res.status === 404 || res.status === 403) {
       if (source === 'rawg') rawgDisabled = true
       return null
     }
     if (!res.ok) return null
     return (await res.json()) as T
-  } catch {
-    if (source === 'rawg') rawgDisabled = true
+  } catch (err) {
+    // A timeout says "too slow right now", not "not there". Treating the two alike
+    // would let one slow moment disable RAWG — and with it every console game — for
+    // the rest of the session.
+    const name = err instanceof Error ? err.name : ''
+    const timedOut = name === 'TimeoutError' || name === 'AbortError'
+    if (source === 'rawg' && !timedOut) rawgDisabled = true
     return null
   }
 }
@@ -195,15 +232,82 @@ export async function lookupGame(id: string): Promise<GameSummary | null> {
 }
 
 /** Explore shelves: popular now and what is coming next. */
-export async function popularGames(): Promise<GameSummary[]> {
+interface SteamFeaturedItem {
+  id: number
+  name?: string
+  header_image?: string
+  large_capsule_image?: string
+}
+
+interface SteamFeatured {
+  new_releases?: { items?: SteamFeaturedItem[] }
+  coming_soon?: { items?: SteamFeaturedItem[] }
+}
+
+/**
+ * Steam's own storefront lists, used when RAWG cannot answer.
+ *
+ * Fetched once per session and shared: both discover sections come out of the same
+ * payload, and asking twice for it would double the wait for no new information.
+ */
+let featuredOnce: Promise<SteamFeatured | null> | null = null
+function steamFeatured(): Promise<SteamFeatured | null> {
+  featuredOnce ??= proxy<SteamFeatured>('steam', 'featuredcategories', { cc: 'us', l: 'en' })
+  return featuredOnce
+}
+
+/**
+ * `top_sellers` is deliberately not used. Measured during a Valve hardware launch it
+ * returned four copies of "Steam Machine" and a controller — the list mixes hardware
+ * with games and nothing in the payload separates them (`type` is 0 for both). The
+ * release lists are games in practice, and duplicates are dropped by title anyway.
+ */
+function mapFeatured(items: SteamFeaturedItem[] | undefined): GameSummary[] {
+  const seen = new Set<string>()
+  const out: GameSummary[] = []
+  for (const item of items ?? []) {
+    const title = item.name?.trim()
+    if (!title) continue
+    const key = title.toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push({
+      id: `steam:${item.id}`,
+      title,
+      cover: item.large_capsule_image ?? item.header_image ?? null,
+      released: null,
+      genres: [],
+      platforms: ['PC'],
+      metacritic: null,
+      rating: null,
+    })
+    if (out.length === 12) break
+  }
+  return out
+}
+
+/**
+ * The two discover sections say where they came from, because the answers are not
+ * equivalent: RAWG covers every platform, Steam only PC. The screen names its source
+ * rather than passing a narrower list off as the same thing.
+ */
+export type DiscoverSource = 'rawg' | 'steam'
+export interface Discover {
+  games: GameSummary[]
+  source: DiscoverSource
+}
+
+export async function popularGames(): Promise<Discover> {
   const data = await proxy<{ results?: RawgGame[] }>('rawg', 'games', {
     ordering: '-added',
     page_size: '12',
   })
-  return (data?.results ?? []).map(mapRawg)
+  if (data?.results?.length) return { games: data.results.map(mapRawg), source: 'rawg' }
+  const featured = await steamFeatured()
+  return { games: mapFeatured(featured?.new_releases?.items), source: 'steam' }
 }
 
-export async function upcomingGames(): Promise<GameSummary[]> {
+export async function upcomingGames(): Promise<Discover> {
   const today = new Date().toISOString().slice(0, 10)
   const inAYear = new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10)
   const data = await proxy<{ results?: RawgGame[] }>('rawg', 'games', {
@@ -211,5 +315,7 @@ export async function upcomingGames(): Promise<GameSummary[]> {
     ordering: 'released',
     page_size: '12',
   })
-  return (data?.results ?? []).map(mapRawg)
+  if (data?.results?.length) return { games: data.results.map(mapRawg), source: 'rawg' }
+  const featured = await steamFeatured()
+  return { games: mapFeatured(featured?.coming_soon?.items), source: 'steam' }
 }

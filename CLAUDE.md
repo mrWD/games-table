@@ -20,8 +20,9 @@ look at the neighbouring project.
 
 ## Principles (do not break without the owner's explicit consent)
 
-1. **The library lives on the device.** `localStorage`, no accounts, nothing
-   personal collected. There is exactly as much server code as it takes to hide
+1. **The library lives on the device.** IndexedDB in a browser, a JSON file in
+   private app storage when running natively, localStorage for small prefs (see
+   DECISIONS). No accounts, nothing personal collected. There is exactly as much server code as it takes to hide
    the key and work around the missing CORS — and it stores nothing. The one
    exception is `src/components/Analytics.tsx`: on a `.vercel.app` host it reports
    cookieless screen-view counts to Vercel Web Analytics. It sends a screen name

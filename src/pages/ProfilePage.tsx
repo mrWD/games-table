@@ -5,6 +5,8 @@ import { useUi } from '../store/ui'
 import { useTheme, type ThemeChoice } from '../store/theme'
 import { useStats } from '../store/stats'
 import { AutoBackup } from '../components/AutoBackup'
+import { exportJsonFile, isNativeApp } from 'tables-core'
+import { native } from '../lib/native'
 import { formatHours } from '../lib/format'
 import { IconDownload, IconPad, IconTrash, IconUpload } from '../components/Icons'
 import { SupportLinks } from '../components/Support'
@@ -64,14 +66,16 @@ export default function ProfilePage() {
 
   const stats = buildStats(games)
 
-  const doExport = () => {
-    const blob = new Blob([JSON.stringify(buildBackup(), null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `gamestable-backup-${new Date().toISOString().slice(0, 10)}.json`
-    a.click()
-    URL.revokeObjectURL(url)
+  const doExport = async () => {
+    const name = `gamestable-backup-${new Date().toISOString().slice(0, 10)}.json`
+    const outcome = await exportJsonFile(buildBackup(), name, native)
+    // Closing the share sheet is an answer, not an error; a real failure has to be said
+    // out loud, or someone walks away believing they have a backup.
+    if (outcome === 'cancelled') return
+    if (outcome === 'failed') {
+      showToast('Export failed — the backup was not saved')
+      return
+    }
     useStats.getState().recordExport()
     showToast('Backup exported')
   }
@@ -166,11 +170,16 @@ export default function ProfilePage() {
       <h2 className="h2">Data</h2>
       <BackupNudge items={Object.keys(games).length} />
       <div className="datacard">
-        <button className="datarow" onClick={doExport}>
+        <button className="datarow" onClick={() => void doExport()}>
           <IconDownload size={20} />
           <div>
             <div className="datarow-title">Export backup</div>
-            <div className="datarow-sub">Download your library as a JSON file</div>
+            <div className="datarow-sub">
+              {/* In the app the file goes to the share sheet, not a download folder. */}
+              {isNativeApp()
+                ? 'Save your library as a JSON file'
+                : 'Download your library as a JSON file'}
+            </div>
           </div>
         </button>
         <button className="datarow" onClick={() => fileRef.current?.click()}>

@@ -55,6 +55,19 @@ In FilmTable, series live in a separate cache with a TTL because new episodes co
 out. A game's metadata does not change, so the whole record is stored in the
 library. Simpler, and the library reads fully offline.
 
+## IndexedDB instead of localStorage (2026-08)
+
+Same decision as FilmTable's, made at the same time and with the owner's
+explicit consent: the library moved to IndexedDB (`gamestable-kv`, adapter now
+`createDeviceStorage` in `tables-core`) to shed the ~5 MB ceiling and to be on the storage a
+native wrapper migrates from when the app goes to the stores. The old
+localStorage value is copied once on first read and left frozen, so a rollback
+finds the library as of the migration moment. Hydration became asynchronous —
+`main.tsx` holds the first render until it settles. Small prefs (`theme`,
+`stats`) stay in localStorage; `theme` must be readable synchronously or the
+first paint flashes the wrong theme. Exporting a backup on iOS goes through the
+share sheet because File System Access does not exist there.
+
 ## Lessons from FilmTable — do not repeat them
 
 - **Vercel and `"type": "module"`.** The function must be ESM (`export default`).
@@ -89,3 +102,60 @@ library. Simpler, and the library reads fully offline.
 - Game recommendations (by genre and platform, as in FilmTable) — after v1.
 - Completion times: HowLongToBeat has no public API, so hours are entered manually.
   If a source turns up, an estimate could be pre-filled.
+
+## Wrapped for the stores with Capacitor (2026-08)
+
+The same Vite build, inside a native shell: `webDir` is the ordinary `dist`, so
+a release is `npm run build` plus `npx cap sync`. `HashRouter` already suited the
+`capacitor://localhost` origin, so routing needed nothing.
+
+The library moved again, from IndexedDB to a JSON file in private app storage
+(`createDeviceStorage` in `tables-core`). A WebView's IndexedDB is *site data* to
+the OS: iOS may reclaim it under storage pressure and "Offload App" discards it,
+while a file in the app container survives both and rides along in the device
+backup. Same one-way copy as before — read once, write the file, leave the old
+value frozen.
+
+Two findings from the pilot, both already paid for:
+
+- **Every browser test for installedness answers "no" inside the WebView**, so
+  the app offered to add itself to the home screen while already installed.
+  `isNativeApp()` in `tables-core` is the fix.
+- **The status bar icons follow the system, not this app's theme.** Measured on
+  targetSdk 36: the web view is inset by 24 CSS px top and bottom,
+  `env(safe-area-inset-*)` reads 0, and those strips are painted with the window
+  background — which comes from the `DayNight` theme and so follows the system.
+  Driving the icons from the app's theme puts white icons on a white strip the
+  moment someone picks Dark on a light phone. Known cost: with the theme
+  overridden against the system, those strips keep the system's colour.
+
+The native build reaches `/api/games` by absolute URL — there is no origin for it
+to be same as, and unlike FilmTable every catalogue call goes through the proxy,
+so without this there would be no search at all. `VITE_API_BASE` still wins; the
+fallback to the production address keeps a store build from shipping searchless.
+The proxy needed no change: verified against production, a request carrying
+`Origin: capacitor://localhost` is answered 200, because the origin parses to the
+host `localhost` and the loopback rule already permits it.
+
+## Discover falls back to Steam's storefront (2026-08-11)
+
+RAWG went down and Explore had nothing to show: both discover sections were RAWG-only,
+so the whole screen collapsed to one apologetic sentence. Search was fine — it already
+falls back to Steam — which made the asymmetry obvious.
+
+Steam's `featuredcategories` now fills those sections when RAWG returns nothing. It
+needs no key, answers in 0.27 s and carries cover art. The sections rename themselves to
+"New on Steam" and "Coming soon on Steam", because a PC-only list is a **narrower**
+answer, not an equal one, and the screen should not imply otherwise.
+
+`top_sellers` is not used even though it sounds like the better match for "Popular now":
+measured during a Valve hardware launch it returned four "Steam Machine" entries and a
+controller, and nothing in the payload separates hardware from games.
+
+This does not restore console games — Steam has none, which is the finding this whole
+architecture is built on. It restores a populated screen and PC discovery. The real fix
+for consoles is a second keyed catalogue (IGDB); see DATA-SOURCES.
+
+Note for deploying: the proxy allowlist gained `featuredcategories`, so the fallback only
+works once `api/games.js` is deployed. Until then the app behaves exactly as before.
+

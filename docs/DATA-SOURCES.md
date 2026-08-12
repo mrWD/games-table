@@ -9,7 +9,9 @@ documentation. If the behaviour changes, re-check it and fix this file.
 |---|---|---|---|---|
 | **RAWG** | all platforms, covers, ratings, dates | required, free | yes | primary catalogue |
 | **Steam** | PC games: genres, Metacritic, platforms, covers | not required | **no** | fallback, PC only |
-| **Wikidata** | titles and years for any game | not required | yes | last resort, no covers |
+| **Wikidata** | titles and years for any game | not required | yes | rejected again, see below |
+| **Wikipedia** | titles, years, descriptions | not required | yes | rejected, almost no covers |
+| **Steam featured** | PC storefront lists with covers | not required | **no** | discover fallback |
 
 ## The key finding: Steam does not see consoles
 
@@ -102,3 +104,52 @@ is embedded and nothing is tracked.
 
 As in FilmTable, supplementary requests are wrapped in a timeout so that a slow
 source does not hold up the results.
+
+
+## Re-measured 2026-08-11, while RAWG was down
+
+RAWG's own API answered **522 for 19.5 seconds**, twice in a row, with no proxy and no
+key involved — so this was not our key, our quota or our proxy. With RAWG gone, Explore
+had nothing at all: both discover sections were RAWG-only. That is what prompted looking
+for a third source.
+
+### Steam `featuredcategories` — now used
+
+`https://store.steampowered.com/api/featuredcategories?cc=us&l=en` — no key, 0.27 s,
+returns `new_releases` (30), `coming_soon` (10), `top_sellers` (10) and `specials`, each
+item carrying `header_image` and `large_capsule_image`. Covers verified to load in the
+app (616×353).
+
+**`top_sellers` is deliberately unused.** Measured during a Valve hardware launch it was
+four copies of "Steam Machine" plus "Steam Controller" — the list mixes hardware with
+games and nothing separates them: `type` is `0` for both a controller and a game. The
+release lists were games throughout, and duplicate titles are dropped anyway.
+
+Still PC-only, so the sections say so: they are labelled "New on Steam" and "Coming soon
+on Steam" rather than passing a narrower list off as the same thing.
+
+### Wikipedia — rejected
+
+`action=query&generator=search&prop=pageimages` is fast (0.34–0.57 s), keyless, CORS-open
+and **does** find console games where Steam cannot: "zelda" returns The Legend of Zelda,
+Breath of the Wild, The Wind Waker; "mario" returns Super Mario Bros., Paper Mario.
+Descriptions even carry the year ("2017 video game").
+
+But covers were present for **1 of 8**, **2 of 8** and **0 of 8** results. The reason is
+structural rather than a gap to work around: game cover art is non-free, so it is not on
+Commons and `pageimages` excludes it. Results also mix in characters and films
+("Elden Ring (film)", "Link (The Legend of Zelda)").
+
+### Wikidata — re-confirmed as unusable
+
+Same SPARQL shape as 2026-07-26, re-run: 61 distinct Zelda games, **3 with images**, and
+the query took **19.6 s** — longer than the 8 s request deadline the client now enforces.
+Release years also come back as re-release dates (Ocarina of Time as 2007). Not viable.
+
+### What is still missing
+
+No keyless source has both console coverage and cover art, because cover art is
+copyrighted. Closing that gap needs a second **keyed** catalogue — IGDB is the obvious
+candidate (consoles + covers, free for non-commercial use, Twitch OAuth credentials held
+server-side like `RAWG_API_KEY`). Not done: it needs the owner to register a Twitch
+application.

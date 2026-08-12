@@ -1,8 +1,9 @@
 import { create } from 'zustand'
-import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware'
+import { createJSONStorage, persist } from 'zustand/middleware'
 import type { BackupFile, GameStatus, GameSummary, TrackedGame } from '../lib/types'
+import { successFeedback, tapFeedback } from '../lib/native-ui'
+import { deviceStorage } from '../lib/storage'
 import { useStats } from './stats'
-import { useUi } from './ui'
 
 /**
  * The whole user library. Unlike FilmTable's shows there is no separate metadata cache:
@@ -52,33 +53,6 @@ function withoutDescriptions(
   return out
 }
 
-/**
- * localStorage has a hard ceiling — measured at 4.94 MB in Chromium — and a write past it
- * throws QuotaExceededError. Unguarded, the exception escapes mid-update and the change is
- * simply lost, which the person only discovers later when an entry is missing. Catch it
- * and say so, once.
- */
-let quotaWarned = false
-
-const guardedStorage: StateStorage = {
-  getItem: (name) => localStorage.getItem(name),
-  setItem: (name, value) => {
-    try {
-      localStorage.setItem(name, value)
-      quotaWarned = false
-    } catch (err) {
-      const errName = err instanceof Error ? err.name : ''
-      if (errName !== 'QuotaExceededError' && errName !== 'NS_ERROR_DOM_QUOTA_REACHED') {
-        throw err
-      }
-      if (quotaWarned) return
-      quotaWarned = true
-      useUi.getState().showToast('Storage is full — export a backup from your profile')
-    }
-  },
-  removeItem: (name) => localStorage.removeItem(name),
-}
-
 export const useLibrary = create<LibraryState>()(
   persist(
     (set) => ({
@@ -87,6 +61,9 @@ export const useLibrary = create<LibraryState>()(
       setStatus: (game, status) => {
         // Outside the updater on purpose: StrictMode runs it twice.
         useStats.getState().recordStatusChange()
+        // Reaching an end state is the moment worth feeling; the rest is a tick.
+        if (status === 'played' || status === 'watched') successFeedback()
+        else tapFeedback()
         set((s) => {
           const now = Date.now()
           const existing = s.games[game.id]
@@ -99,6 +76,8 @@ export const useLibrary = create<LibraryState>()(
 
       changeStatus: (id, status) => {
         useStats.getState().recordStatusChange()
+        if (status === 'played' || status === 'watched') successFeedback()
+        else tapFeedback()
         set((s) => {
           const g = s.games[id]
           if (!g) return s
@@ -164,7 +143,10 @@ export const useLibrary = create<LibraryState>()(
     {
       name: 'gamestable-library-v1',
       version: 1,
-      storage: createJSONStorage(() => guardedStorage),
+      // IndexedDB in a browser, a file in private app storage natively — and one
+      // migration each way behind it (see lib/storage.ts). Hydration is async either
+      // way, so main.tsx holds the first render until it settles.
+      storage: createJSONStorage(() => deviceStorage),
       // Descriptions are re-fetched whenever a detail page opens and are never shown in a
       // list, yet storing them tripled a game entry — 407 bytes to 1229 for Elden Ring.
       // Keep them in memory for the session; never write them.
