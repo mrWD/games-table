@@ -6,6 +6,8 @@ import GameDetailPage from './pages/GameDetailPage'
 import ProfilePage from './pages/ProfilePage'
 import InsightsPage from './pages/InsightsPage'
 import { BottomNav, ConfirmHost, ScrollToTop, ToastHost } from './components/ui'
+import { refreshWidgets } from './lib/widget'
+import { useLibrary } from './store/library'
 import { watchSystemTheme } from './store/theme'
 import { beginSessionOnce, useStats } from './store/stats'
 import { SupportFab } from './components/Support'
@@ -18,7 +20,16 @@ function Shell() {
 
   useEffect(() => {
     beginSessionOnce()
-    return watchSystemTheme()
+    // The widgets are fed from the same store the shelves read, so a subscription is
+    // enough: every status change pushes a fresh snapshot, and the app never has to
+    // remember to call this from each of those places.
+    void refreshWidgets()
+    const stopWidgets = useLibrary.subscribe(() => void refreshWidgets())
+    const stopTheme = watchSystemTheme()
+    return () => {
+      stopWidgets()
+      stopTheme()
+    }
   }, [])
 
   useEffect(() => {
