@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		2851A7EC448DEA6D3038A56F /* Snapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D8706633BFF338CAC59A616 /* Snapshot.swift */; };
+		2CE2DCE1D3D819BB15D999CA /* AIBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7664BF80E88E630AB97126C6 /* AIBridge.swift */; };
 		2FAD9763203C412B000D30F8 /* config.xml in Resources */ = {isa = PBXBuildFile; fileRef = 2FAD9762203C412B000D30F8 /* config.xml */; };
 		31D5C16A8513A24DBBA285AC /* GamesTableWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 6CAAC698C7DED542C814E5DD /* GamesTableWidget.appex */; };
 		372EDD1EA34C59218B54F415 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C312694407775F06FDAC59A8 /* MainViewController.swift */; };
@@ -20,6 +21,7 @@
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
 		9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9582B6822FE993A50072D4E8 /* SceneDelegate.swift */; };
+		B551B5AE5345748BBF4E4165 /* TranslateBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FD70D86E21AA893CD0E0F3D /* TranslateBridge.swift */; };
 		DE2ADC9BDC023FEF5ED903E3 /* GamesTableWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C6B13E1E4048D8F69559421 /* GamesTableWidget.swift */; };
 		FAAD68B62AE1C223CE50C217 /* WidgetBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AFC67C4F5A9A443A46310D9 /* WidgetBridge.swift */; };
 /* End PBXBuildFile section */
@@ -62,6 +64,8 @@
 		50B271D01FEDC1A000F3C39B /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; path = public; sourceTree = "<group>"; };
 		5D8706633BFF338CAC59A616 /* Snapshot.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Snapshot.swift; sourceTree = "<group>"; };
 		6CAAC698C7DED542C814E5DD /* GamesTableWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = GamesTableWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		7664BF80E88E630AB97126C6 /* AIBridge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIBridge.swift; sourceTree = "<group>"; };
+		7FD70D86E21AA893CD0E0F3D /* TranslateBridge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TranslateBridge.swift; sourceTree = "<group>"; };
 		9582B6822FE993A50072D4E8 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		958DCC722DB07C7200EA8C5F /* debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = debug.xcconfig; path = ../debug.xcconfig; sourceTree = SOURCE_ROOT; };
 		9C6B13E1E4048D8F69559421 /* GamesTableWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GamesTableWidget.swift; sourceTree = "<group>"; };
@@ -142,6 +146,8 @@
 				1AFC67C4F5A9A443A46310D9 /* WidgetBridge.swift */,
 				C312694407775F06FDAC59A8 /* MainViewController.swift */,
 				2AB4FA25A4930857A81C0F16 /* App.entitlements */,
+				7664BF80E88E630AB97126C6 /* AIBridge.swift */,
+				7FD70D86E21AA893CD0E0F3D /* TranslateBridge.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -266,6 +272,8 @@
 				9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */,
 				FAAD68B62AE1C223CE50C217 /* WidgetBridge.swift in Sources */,
 				372EDD1EA34C59218B54F415 /* MainViewController.swift in Sources */,
+				2CE2DCE1D3D819BB15D999CA /* AIBridge.swift in Sources */,
+				B551B5AE5345748BBF4E4165 /* TranslateBridge.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

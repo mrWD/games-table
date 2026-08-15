@@ -1,3 +1,4 @@
+import { Translated } from '../components/Translated'
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import type { GameSummary } from '../lib/types'
@@ -180,7 +181,7 @@ export default function GameDetailPage() {
           ))}
         </div>
 
-        {game.description && <p className="detail-about">{game.description}</p>}
+        {game.description && <Translated text={game.description} className="detail-about" />}
 
         {tracked && (
           <button
