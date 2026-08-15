@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { catalogueByGenre } from '../lib/api'
 import type { GameStatus, GameSummary, TrackedGame } from '../lib/types'
 import { useLibrary } from './library'
+import { useTones } from './tone'
 
 /**
  * Content-based recommendations, computed on this device.
@@ -24,7 +25,17 @@ const STATUS_WEIGHT: Record<GameStatus, number> = {
   dropped: -1.5,
 }
 
-const SCORE = { genre: 0.5, platform: 0.2, quality: 0.2, year: 0.1 }
+/**
+ * Tone is worth as much as platform and rating, and less than genre.
+ *
+ * Genre is what the catalogue is organised by and the only thing that fetches candidates
+ * at all, so it stays first. Tone answers what genre cannot — "sci-fi" is both The
+ * Expanse and Rick and Morty — but it is read off a description by a model rather than
+ * stated by the catalogue, so it corrects the order rather than deciding it. Its weight
+ * is also self-limiting: a candidate whose tone has not been read yet simply scores zero
+ * on it, which is the same as the ranking that shipped before.
+ */
+const SCORE = { genre: 0.45, tone: 0.15, platform: 0.2, quality: 0.15, year: 0.05 }
 
 const MAX_SEED_GENRES = 4
 const RESULT_LIMIT = 12
@@ -47,6 +58,9 @@ function genreSlug(name: string): string {
 
 export interface Taste {
   genres: Record<string, number>
+  /** Weighted the same way as genres, from whatever tones have been read so far. */
+  tones: Record<string, number>
+  topTones: string[]
   /** Slug per genre name, so candidates can actually be fetched. */
   slugs: Record<string, string>
   topGenres: string[]
@@ -72,6 +86,8 @@ function yearOf(date: string | null | undefined): number | null {
 
 export function buildTaste(games: Record<string, TrackedGame>): Taste {
   const genres: Record<string, number> = {}
+  const tones: Record<string, number> = {}
+  const toneCache = useTones.getState().tones
   const slugs: Record<string, string> = {}
   const platforms: Record<string, number> = {}
   const platformIdWeight = new Map<number, number>()
@@ -93,6 +109,10 @@ export function buildTaste(games: Record<string, TrackedGame>): Taste {
       genres[name] = (genres[name] ?? 0) + per
       slugs[name] ??= g.genreSlugs?.[i] ?? genreSlug(name)
     })
+    // Only titles whose tone has actually been read contribute; the rest simply are not
+    // in the vector yet, which is the same as the app before any of this.
+    const mine = toneCache[g.id] ?? []
+    for (const t of mine) tones[t] = (tones[t] ?? 0) + weight / mine.length
     for (const p of g.platforms) platforms[p] = (platforms[p] ?? 0) + weight
     for (const id of g.platformIds ?? []) {
       platformIdWeight.set(id, (platformIdWeight.get(id) ?? 0) + weight)
@@ -117,6 +137,11 @@ export function buildTaste(games: Record<string, TrackedGame>): Taste {
     slugs,
     topGenres: Object.entries(genres)
       .sort((a, b) => b[1] - a[1])
+      .map(([name]) => name),
+    tones,
+    topTones: Object.entries(tones)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
       .map(([name]) => name),
     platforms,
     topPlatformIds: [...platformIdWeight.entries()]
@@ -170,7 +195,16 @@ function yearAffinity(game: GameSummary, meanYear: number | null): number {
  * naming both made it sound like a farming game got you here, when Stardew added
  * nothing the first title had not already covered.
  */
-function reasonFor(candidate: GameSummary, taste: Taste): string {
+function reasonFor(candidate: GameSummary, taste: Taste, tones: string[] = []): string {
+  // Tone leads when there is one, because "dark and tense, like The Witcher 3" says
+  // something a genre list cannot. It is only ever mentioned where the reader's own
+  // library shares it, so it explains the ranking rather than describing the game.
+  const shared = tones.filter((t) => (taste.tones[t] ?? 0) > 0).slice(0, 2)
+  const mood = shared.length ? `${shared.join(' and ')} — ` : ''
+  return mood + plainReason(candidate, taste)
+}
+
+function plainReason(candidate: GameSummary, taste: Taste): string {
   const ranked = taste.seeds
     .map((seed) => {
       const shared = seed.genres.filter((g) => candidate.genres.includes(g))
@@ -213,6 +247,7 @@ async function buildRecommendations(taste: Taste): Promise<Recommendation[]> {
     ),
   )
 
+  const toneCache = useTones.getState().tones
   const owned = new Set(Object.keys(useLibrary.getState().games))
   const ownedTitles = new Set(
     Object.values(useLibrary.getState().games).map((g) => g.title.toLowerCase()),
@@ -222,14 +257,16 @@ async function buildRecommendations(taste: Taste): Promise<Recommendation[]> {
   for (const pool of pools) {
     for (const game of pool) {
       if (owned.has(game.id) || ownedTitles.has(game.title.toLowerCase())) continue
+      const tones = toneCache[game.id] ?? []
       const score =
         SCORE.genre * cosine(taste.genres, game.genres) +
+        SCORE.tone * cosine(taste.tones, tones) +
         SCORE.platform * platformAffinity(taste, game) +
         SCORE.quality * qualityScore(game) +
         SCORE.year * yearAffinity(game, taste.meanYear)
       const previous = best.get(game.id)
       if (!previous || score > previous.score) {
-        best.set(game.id, { game, score, reason: reasonFor(game, taste) })
+        best.set(game.id, { game, score, reason: reasonFor(game, taste, tones) })
       }
     }
   }

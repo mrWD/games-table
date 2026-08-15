@@ -1,4 +1,5 @@
 import { Translated } from '../components/Translated'
+import { useTones } from '../store/tone'
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import type { GameSummary } from '../lib/types'
@@ -42,6 +43,10 @@ export default function GameDetailPage() {
       if (!g) return
       setFetched(g)
       if (useLibrary.getState().games[id]) updateMeta(id, g)
+      // The only moment this game's description is on hand: the library drops the field
+      // before saving. Reading the tone now and keeping the three words costs nothing to
+      // store and is what lets the recommender know a Platform game is bleak or cosy.
+      if (g.description) void useTones.getState().ensure(id, g.description, true)
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])

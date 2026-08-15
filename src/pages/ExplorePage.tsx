@@ -4,6 +4,7 @@ import { useRecommend } from '../store/recommend'
 import { GameResultRow } from '../components/cards'
 import { SectionLabel, SkeletonRows } from '../components/ui'
 import { IconSearch, IconX } from '../components/Icons'
+import { ToneBackfill } from '../components/ToneBackfill'
 
 /**
  * What to say when the catalogue answers nothing.
@@ -45,6 +46,7 @@ function ForYou() {
         <p className="chips-hint">
           Based on {taste.seedCount} game{taste.seedCount === 1 ? '' : 's'} in your library ·{' '}
           {taste.topGenres.slice(0, 3).join(', ')}
+          {taste.topTones.length > 0 && ` · you lean ${taste.topTones.join(', ')}`}
         </p>
       )}
       {loading && items.length === 0 && <SkeletonRows count={3} />}
@@ -54,6 +56,7 @@ function ForYou() {
       {items.map((r) => (
         <GameResultRow key={r.game.id} game={r.game} reason={r.reason} />
       ))}
+      <ToneBackfill items={items} onLearned={() => void load({ force: true })} />
     </section>
   )
 }
