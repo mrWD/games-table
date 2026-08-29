@@ -104,6 +104,84 @@ backend for it and none may be added.
 There is no analytics here at all — unlike FilmTable, which has Vercel Web
 Analytics.
 
+## App Store / TestFlight (as of 2026-08-29)
+
+The app record exists: **GamesTable**, Apple ID `6806613778`, bundle
+`com.mrwd.gamestable`. Created by hand in App Store Connect — the public API
+cannot create an app record, only read and update one.
+
+**Version 1.0, build 2 is uploaded and shows "Ready to Submit".** Build 1 was rejected
+on upload; see the traps below.
+
+Filled in and saved:
+
+- Category **Entertainment**, taken from `docs/STORE.md`
+- Age rating **4+** — the seven-step questionnaire answered "none" or "no" throughout,
+  which is accurate: the app carries no content of its own, has no web view, and nothing
+  a person writes in it leaves the device
+- Content Rights: **yes, it shows third-party content and the rights are in place**. The
+  honest answer — the app displays covers, artwork and descriptions from its sources
+  under their terms, and the attribution those terms require is on screen. Answering
+  "no" would have contradicted the app's own attribution line
+- **Test Information is not filled yet** — FilmTable has the wording to copy.
+
+**What is not done: open testing.** A public TestFlight link needs an *external* group,
+and App Store Connect currently offers only "Create New Internal Group" — there is no
+External Testing section in the sidebar at all. Everything known to gate it has been
+checked and is in order: the Program License Agreement is accepted, the Free Apps
+Agreement is Active, and the App Information above is complete. The Free Apps Agreement
+was activated on the same day, so the most likely explanation is that the interface has
+not caught up. If External Testing is still missing after that, the cause is something
+else and worth looking for with those four already ruled out.
+
+### Traps that cost time, in the order they bit
+
+- **A widget extension without `CFBundleDisplayName` is rejected on upload**, error
+  90360, and only after the whole binary has gone up. All three apps had the same
+  omission.
+- **The archive is signed for development; only the export carries the distribution
+  signature.** `scripts/release-ios.sh` printed "Apple Development" for a perfectly
+  good build because it read the archive. It now unpacks the `.ipa` and reads that.
+- **The build number must rise every upload.** A repeat is refused after the transfer,
+  not before.
+- **`altool` times out on Apple's own endpoints** more often than not; the upload
+  itself usually succeeds on a retry. One "failure" was only the report being cut off
+  — the build was already there.
+- **App icons must be flat squares.** These were drawn with an 18.4% corner radius on
+  the light background, so the corners held `#f2f2f2`. Masking exactly on that radius
+  left a pale halo — the boundary pixels are anti-aliased and half of what they hold is
+  background — and a four-pixel inset just moved the halo onto the mask's own edge. The
+  mask now sits twelve pixels inside. `scripts/full-bleed-icon.mjs` in film-table does
+  it.
+
+### Releasing
+
+```bash
+scripts/release-ios.sh 3      # the argument is the build number
+```
+
+Builds, signs, and checks the signature on the exported `.ipa`. Uploading is a separate
+step and needs an App Store Connect API key — see `docs/RELEASE-IOS.md`. The key lives
+in `~/.appstoreconnect/private_keys/` and nowhere in this repository.
+
+## On-device AI (as of 2026-08-29)
+
+`AIBridge` and `TranslateBridge` were ported from FilmTable, so the model and Apple's
+Translation framework are both available here. Translation matters more in this app: the
+catalogue writes in English only.
+
+**Tone tags** (`store/tone.ts`, `lib/tone.ts`) are the local addition. The recommender
+knew genres, and "sci-fi" is both The Expanse and Rick and Morty; tone is read off the
+description the app already downloaded and weighs alongside genre. Measured before
+building, three runs over four real descriptions: the leading tag was identical every
+time and the third wandered, so a library title is read twice and only what both runs
+agree on is kept.
+
+A tracked game usually has no description to read — the library drops that field before
+saving because it costs more than the rest of an entry combined. The tone is therefore
+read on the game's own page, at the one moment the description is in hand, and only the
+three words are stored.
+
 ## Open questions
 
 - Vercel Web Analytics is not wired into GamesTable; the owner has not asked for
