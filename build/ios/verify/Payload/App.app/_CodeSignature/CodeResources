@@ -6,15 +6,15 @@
 	<dict>
 		<key>AppIcon60x60@2x.png</key>
 		<data>
-		6ryVEhu7V7JpxHLD2qEw6QCu9mg=
+		1rkcEq8pC1imKooBY83S0u/7w0s=
 		</data>
 		<key>AppIcon76x76@2x~ipad.png</key>
 		<data>
-		7YSAP9viuHevdXNLwt3sd8GaUPQ=
+		vZPJ6HLJHNtKgEuLC+phvY/xEgE=
 		</data>
 		<key>Assets.car</key>
 		<data>
-		Ut1ZbCz23pLjh8jelKzMTtM6B9A=
+		eWGz+fcpyaGnlA/iSgZyMXI++nI=
 		</data>
 		<key>Base.lproj/LaunchScreen.storyboardc/01J-lp-oVM-view-snD-IY-ifK.nib</key>
 		<data>
@@ -38,7 +38,7 @@
 		</data>
 		<key>Frameworks/Capacitor.framework/Capacitor</key>
 		<data>
-		FaZcSg32EPyNJQa6bnANZRAztdM=
+		Jgs57poQqiVV0aO9rcWALHlUo9Y=
 		</data>
 		<key>Frameworks/Capacitor.framework/Info.plist</key>
 		<data>
@@ -58,7 +58,7 @@
 		</data>
 		<key>Frameworks/Cordova.framework/Cordova</key>
 		<data>
-		fVyJpQv4JPn9Hqkz7K3aceGaUU0=
+		cdJIBLXbPRR1eyVa71SUdtOY2t4=
 		</data>
 		<key>Frameworks/Cordova.framework/Info.plist</key>
 		<data>
@@ -74,7 +74,7 @@
 		</data>
 		<key>Info.plist</key>
 		<data>
-		VeqQ27Kft5y9xM4b652APZh6z2M=
+		myr5jLDWUxOZE9f+KafCGkW6EG4=
 		</data>
 		<key>PkgInfo</key>
 		<data>
@@ -82,15 +82,15 @@
 		</data>
 		<key>PlugIns/GamesTableWidget.appex/GamesTableWidget</key>
 		<data>
-		gz/aVugGWF5X/uRryqvYXf7/z7Q=
+		xA8kFYZZnO+ShNztekot9BB4uy0=
 		</data>
 		<key>PlugIns/GamesTableWidget.appex/Info.plist</key>
 		<data>
-		TJaJ6K4hWPsZOHs0sBgT6oLrELo=
+		Tvr20bmpbOdRF9vuilNoMTofPjw=
 		</data>
 		<key>PlugIns/GamesTableWidget.appex/_CodeSignature/CodeResources</key>
 		<data>
-		/HhMW+PaacsUSPVfIab0dDZggKA=
+		3G/mjl5JfnfCnZDT15Vsn9Y3VA0=
 		</data>
 		<key>PlugIns/GamesTableWidget.appex/embedded.mobileprovision</key>
 		<data>
@@ -108,33 +108,33 @@
 		<data>
 		3JFanjEwmysjWSBcnpiLsRg11tY=
 		</data>
-		<key>public/assets/index-C96MWypU.js</key>
+		<key>public/assets/index-BaYzRo2o.js</key>
 		<data>
-		H1qkp/iC3Cq9IZRTFN/tk+th7EI=
+		PUoF5ZxMb5yZmtlhZnaT2w0hnDg=
 		</data>
 		<key>public/assets/index-DUzg3GLT.css</key>
 		<data>
 		BdZO2I5d5RppHd/NGsjKhK1v16g=
 		</data>
-		<key>public/assets/web-BFELBjtf.js</key>
+		<key>public/assets/web-5qtjdrAs.js</key>
 		<data>
-		HUhRi1IjMIWHVlIcI17qSYoqZJE=
+		Q/TAmTi8Viqk0uv4fuE8cSyaaxc=
 		</data>
-		<key>public/assets/web-BmMbRuma.js</key>
+		<key>public/assets/web-Bbl62sqi.js</key>
 		<data>
-		ZW6XWhpmHVSe5nRIvI7WTlxYFzw=
+		jAYAvSoriEOM4r0GpcXccf4ta2I=
 		</data>
-		<key>public/assets/web-COrRmVTS.js</key>
+		<key>public/assets/web-BgRFzRzr.js</key>
 		<data>
-		oAvivo+eBeEKNiFk8Yghr+Pa910=
+		H+H1mhRpcUxmeo4Hn1dwvfBXKis=
 		</data>
-		<key>public/assets/web-DWtRquMW.js</key>
+		<key>public/assets/web-CkRs5dLP.js</key>
 		<data>
-		FauNwmfWSysegSA5E5VFc7+0sOY=
+		AjM2vbD/OLwn/KRvXje3N8X83rk=
 		</data>
-		<key>public/assets/web-I2Bjw1Md.js</key>
+		<key>public/assets/web-i-jVTBbI.js</key>
 		<data>
-		sOBwCFQ97qvThEarsI91CNtigFU=
+		dm/p06tF12A7E31Uhrc49R5wqYs=
 		</data>
 		<key>public/assets/workbox-window.prod.es5-Bd17z0YL.js</key>
 		<data>
@@ -170,7 +170,7 @@
 		</data>
 		<key>public/index.html</key>
 		<data>
-		+lWsz8HstzPO5xzDsrT1EL5gI6w=
+		2Jba38/lGR++pCXVLUxwWsZSDO8=
 		</data>
 		<key>public/manifest.webmanifest</key>
 		<data>
@@ -191,21 +191,21 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			OqfdVTr0nw8Vb3KVR0dduKE/pAYa/Tp84xBTwYOeVBQ=
+			MJ2+FHsstj8Og9a/KYa4/Ric1vt2Wnys4CEGWm2BeEM=
 			</data>
 		</dict>
 		<key>AppIcon76x76@2x~ipad.png</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			6LtDfFkZCOhG2i+UaYAlWY7flh3IGJoPMxCIZo2IVqw=
+			LqBrfe+gh4IGqGNjDN8domLVvnYEovJILhkX3Yeh8oo=
 			</data>
 		</dict>
 		<key>Assets.car</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			MXjJvQoGvVUAs70qqrqH0B+UWB1QTuqVPAo7uU/6N9E=
+			F+MQUSCn9rbX+oOTFZd+Aj9Tzae5UCBJzPf3DSHsZ78=
 			</data>
 		</dict>
 		<key>Base.lproj/LaunchScreen.storyboardc/01J-lp-oVM-view-snD-IY-ifK.nib</key>
@@ -247,7 +247,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			d2QaH0c0bdGK8/JhT3NsogUKKW8+W90JzKDA/iaOa24=
+			TQucJyOo1jiYPESsW9+BPX2EgB6b/JDgw4zJcIsSafM=
 			</data>
 		</dict>
 		<key>Frameworks/Capacitor.framework/Info.plist</key>
@@ -282,7 +282,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			N9iUDakPnk4Ydloidu41ijL8nnEOb3YYxKEaU2xle9Q=
+			FffCppnshI28DxBLAF19wUmkwPNHNihe7HRIHbkq8N0=
 			</data>
 		</dict>
 		<key>Frameworks/Cordova.framework/Info.plist</key>
@@ -310,21 +310,21 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			oMJWVnQxQ+at1pIqbeV9OXTNYCYUT1DZn1nl7ivHmk8=
+			/eeleGQMY4dJwTEaqIGmvVC3BBBx9u5gw/b0IL2D01E=
 			</data>
 		</dict>
 		<key>PlugIns/GamesTableWidget.appex/Info.plist</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			ZORdDhk5gENcIiANX3nUgSm8iWpP5Xv6KjTTuWdeTHk=
+			OUju03nilkb20j7PYlez2GC4abH9DNu9vYj1ryEqwnQ=
 			</data>
 		</dict>
 		<key>PlugIns/GamesTableWidget.appex/_CodeSignature/CodeResources</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			Dd56ehS9so2kFuc69EgUgiZLX3GYfsBXCfM75Dw2HzM=
+			dqkeSmhxiIarZLrlv46PqtEBXj3ZL4mr7MG4uK8z75Q=
 			</data>
 		</dict>
 		<key>PlugIns/GamesTableWidget.appex/embedded.mobileprovision</key>
@@ -355,11 +355,11 @@
 			ALl46neX+T/101SCNi0HAXKO3j/Ex1sz4lunLzboYJc=
 			</data>
 		</dict>
-		<key>public/assets/index-C96MWypU.js</key>
+		<key>public/assets/index-BaYzRo2o.js</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			NOG9OmZl/993dWX92ArMluFwG+FK0LVSX086BGpY0C4=
+			MJ5aVi3k664PjauEzFIkWXEeb9aw/j5b+Sr1Gmfvjbw=
 			</data>
 		</dict>
 		<key>public/assets/index-DUzg3GLT.css</key>
@@ -369,39 +369,39 @@
 			MbA1JNiUQoJKr7JKdFDNNUrbi3iUN30TscHmSc3dNNA=
 			</data>
 		</dict>
-		<key>public/assets/web-BFELBjtf.js</key>
+		<key>public/assets/web-5qtjdrAs.js</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			qO8guRQRjorNfa7lYLYdML63K+LWm69gS+toYVdL4Tw=
+			1XOyFng0huGfwZ2vrjk7U2GUGIpVEjsNnXjggjXNpGY=
 			</data>
 		</dict>
-		<key>public/assets/web-BmMbRuma.js</key>
+		<key>public/assets/web-Bbl62sqi.js</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			x7MuW+z8kOkx3VxLsWP4zyTRnDhzQALsn+gxy3t1a48=
+			5mohY93Wuo+nmThI+jzfUE58gH4MjW4uVdag4lKRuJg=
 			</data>
 		</dict>
-		<key>public/assets/web-COrRmVTS.js</key>
+		<key>public/assets/web-BgRFzRzr.js</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			A1UavGQqZND+/2FCenDWE3sC5dCXxPjqas7YJT88UUg=
+			QY0wkbvJLDd1IZZAcpSr4MSWM0K5XwerDVrqV+WA9vM=
 			</data>
 		</dict>
-		<key>public/assets/web-DWtRquMW.js</key>
+		<key>public/assets/web-CkRs5dLP.js</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			ngwf2EU3UgYq7ZW22Vg8ETIIERtpeL79Y3szyYx8Vm0=
+			VWBbEkyC4lvvj3A+P8qEkIRyKwDv18El4E7Fou4Fksk=
 			</data>
 		</dict>
-		<key>public/assets/web-I2Bjw1Md.js</key>
+		<key>public/assets/web-i-jVTBbI.js</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			N9HUhCNhXyH3BHfs5o4gEwLSPoPoQeXyh93H2j9AqbI=
+			RTldquiQhdTXr0J8haZHcPaXGQtuj0L2bMnxciCqc1I=
 			</data>
 		</dict>
 		<key>public/assets/workbox-window.prod.es5-Bd17z0YL.js</key>
@@ -464,7 +464,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			CFuI9xGQEqjnqApy3uUxeBYTNo3yhlJxWrMwB+9XWT4=
+			dZFEkD9h0oMd2/E7d1laquJaUYzEvQPI7kQ7/AfTk28=
 			</data>
 		</dict>
 		<key>public/manifest.webmanifest</key>
