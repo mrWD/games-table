@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#f3f2f7" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="GamesTable" />
+    <meta name="description" content="Track the games you play, plan to play, and want to watch." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <title>GamesTable</title>
+    <script>
+      // Apply the saved theme before first paint so there is no light flash.
+      try {
+        var saved = JSON.parse(localStorage.getItem('gamestable-theme') || '{}')
+        var choice = saved && saved.state && saved.state.theme
+        var dark =
+          choice === 'dark' ||
+          (choice !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+        if (choice === 'dark' || choice === 'light') document.documentElement.dataset.theme = choice
+        document
+          .querySelector('meta[name="theme-color"]')
+          .setAttribute('content', dark ? '#0f0e13' : '#f3f2f7')
+      } catch (e) {}
+    </script>
+    <script type="module" crossorigin src="/assets/index-C96MWypU.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DUzg3GLT.css">
+  <link rel="manifest" href="/manifest.webmanifest"></head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

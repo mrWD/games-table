@@ -1,0 +1,29 @@
+{
+	"appId": "com.mrwd.gamestable",
+	"appName": "GamesTable",
+	"webDir": "dist",
+	"server": {
+		"androidScheme": "https"
+	},
+	"ios": {
+		"backgroundColor": "#f3f2f7"
+	},
+	"android": {
+		"backgroundColor": "#f3f2f7"
+	},
+	"plugins": {
+		"SplashScreen": {
+			"launchAutoHide": false,
+			"backgroundColor": "#f3f2f7",
+			"androidSplashResourceName": "splash"
+		}
+	},
+	"packageClassList": [
+		"AppPlugin",
+		"FilesystemPlugin",
+		"HapticsPlugin",
+		"SharePlugin",
+		"SplashScreenPlugin",
+		"StatusBarPlugin"
+	]
+}
