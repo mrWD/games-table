@@ -1,15 +1,22 @@
 # GamesTable
 
 A personal video game tracker: what you are playing now, what you want to finish,
-what you have already finished — and what you just want to watch as a playthrough
-or a game movie on YouTube and Twitch.
+what you have already finished, and what you would rather watch as a playthrough
+or a game movie on YouTube and Twitch. The library is stored on the device; no
+account required.
 
-A PWA: it runs on Android, iPhone and the web from a single codebase and installs
-to the home screen. The library is stored on the device; no account required.
+**Try it:** [web app](https://games-table-bay.vercel.app) (installs as a PWA on
+Android, iPhone and desktop) | [iOS beta on TestFlight](https://testflight.apple.com/join/7XYcknae)
 
-**→ [games-table-bay.vercel.app](https://games-table-bay.vercel.app)**
+<img src="docs/readme/library-light.png" alt="GamesTable library screen" width="360">
 
-A free fan project. Not affiliated with RAWG, Valve, YouTube or Twitch.
+One codebase ships three ways: the PWA on the web, and iOS and Android shells via
+Capacitor. The iOS shell adds a native home-screen widget (SwiftUI, WidgetKit) fed
+from the web app through an App Group store. Shared UI and storage code lives in
+[tables-core](https://github.com/mrWD/tables-core), the same package behind
+[FilmTable](https://github.com/mrWD/film-table).
+
+A free fan project. Not affiliated with RAWG, IGDB, Valve, YouTube or Twitch.
 
 ## Features
 
@@ -35,11 +42,14 @@ A free fan project. Not affiliated with RAWG, Valve, YouTube or Twitch.
 
 | Source | What it provides | Key |
 |---|---|---|
-| [RAWG](https://rawg.io/apidocs) | all platforms, covers, ratings | free, required |
-| Steam | PC games without a key — the fallback path | not required |
+| [RAWG](https://rawg.io/apidocs) | all platforms, covers, ratings; the primary catalogue | free, required |
+| [IGDB](https://api-docs.igdb.com/) | console games with cover art; the second catalogue | free, via a Twitch app; optional |
+| Steam | PC games without a key; the fallback path | not required |
 
-Both go through a thin serverless proxy: the RAWG key cannot live in the browser,
-and Steam does not send CORS headers at all. Details and measurements are in
+All three go through a thin serverless proxy: the RAWG key and the IGDB client
+secret cannot live in the browser, and Steam does not send CORS headers at all.
+Without IGDB credentials the proxy answers 503 and search moves on to the next
+source. Details and measurements are in
 [docs/DATA-SOURCES.md](docs/DATA-SOURCES.md).
 
 ## Running locally
@@ -49,14 +59,20 @@ npm install
 npm run dev
 ```
 
-Search only works with the proxy running — a consequence of neither source being
-reachable from the browser directly:
+Search only works with the proxy running, since none of the sources is reachable
+from the browser directly:
 
 ```bash
 echo 'RAWG_API_KEY=<key>' > .env.local            # the file is in .gitignore
+echo 'IGDB_CLIENT_ID=<id>' >> .env.local           # optional, for console games
+echo 'IGDB_CLIENT_SECRET=<secret>' >> .env.local
 node --env-file=.env.local scripts/dev-api.mjs    # proxy on :3001
 npm run dev                                       # Vite proxies /api to it
 ```
+
+The native shells are built from the same source: `npm run build:native`, then
+`npx cap sync` and open `ios/App` or `android/` in Xcode or Android Studio.
+[docs/RELEASE-IOS.md](docs/RELEASE-IOS.md) covers the TestFlight upload.
 
 ## Documentation
 
@@ -68,3 +84,5 @@ npm run dev                                       # Vite proxies /api to it
 | [docs/DATA-SOURCES.md](docs/DATA-SOURCES.md) | the APIs and their quirks, with measurements |
 | [docs/DECISIONS.md](docs/DECISIONS.md) | why it is built this way, and the pitfalls from FilmTable |
 | [docs/DEPLOY.md](docs/DEPLOY.md) | deployment, environment variables, production checks |
+| [docs/RELEASE-IOS.md](docs/RELEASE-IOS.md) | building the iOS shell and releasing to TestFlight |
+| [docs/STORE.md](docs/STORE.md) | store listing draft and screenshots |
