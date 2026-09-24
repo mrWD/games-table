@@ -7,6 +7,7 @@ import { useStats } from '../store/stats'
 import { AutoBackup } from '../components/AutoBackup'
 import { exportJsonFile, isNativeApp } from 'tables-core'
 import { native } from '../lib/native'
+import { donationsHidden, siteLink } from '../lib/from-app'
 import { formatHours } from '../lib/format'
 import { IconDownload, IconPad, IconTrash, IconUpload } from '../components/Icons'
 import { SupportLinks } from '../components/Support'
@@ -227,12 +228,17 @@ export default function ProfilePage() {
       <h2 className="h2">Feedback &amp; contact</h2>
       <Feedback />
 
-      <h2 className="h2">Support</h2>
-      <SupportLinks />
+      {/* App Store 3.1.1: no donation buttons inside the app — see lib/from-app. */}
+      {!donationsHidden() && (
+        <>
+          <h2 className="h2">Support</h2>
+          <SupportLinks />
+        </>
+      )}
 
       <h2 className="h2">More from the author</h2>
       <p className="attribution">
-        <a href="https://mrwd.github.io/" target="_blank" rel="noreferrer">
+        <a href={siteLink('https://mrwd.github.io/')} target="_blank" rel="noreferrer">
           All products &rarr;
         </a>
       </p>

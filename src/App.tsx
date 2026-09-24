@@ -11,6 +11,7 @@ import { useLibrary } from './store/library'
 import { watchSystemTheme } from './store/theme'
 import { beginSessionOnce, useStats } from './store/stats'
 import { SupportFab } from './components/Support'
+import { donationsHidden } from './lib/from-app'
 import { InstallHint } from './components/InstallHint'
 import { Analytics } from './components/Analytics'
 
@@ -52,7 +53,8 @@ function Shell() {
         <Route path="*" element={<Navigate to="/library" replace />} />
       </Routes>
       <BottomNav />
-      <SupportFab />
+      {/* App Store 3.1.1: no donation buttons inside the app — see lib/from-app. */}
+      {!donationsHidden() && <SupportFab />}
       <ToastHost />
       <ConfirmHost />
       <Analytics />
