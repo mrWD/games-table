@@ -78,8 +78,9 @@ curl -s -H "$O" "localhost:3001/api/games?source=rawg&path=games&search=hentai" 
 
 ### Who the proxy answers (2026-10-18)
 
-- **With an Origin:** exactly `capacitor://localhost` (iOS), `https://localhost`
-  (Android), its own host (which covers preview deployments),
+- **With an Origin:** exactly `capacitor://localhost` (iOS — measured in the simulator
+  against this code in production mode: `Origin: capacitor://localhost`,
+  `Sec-Fetch-Site: cross-site`, answered 200), `https://localhost` (Android), its own host (which covers preview deployments),
   `games-table-bay.vercel.app` and anything in `ALLOWED_ORIGINS`. Any
   `http://localhost:<port>` only when `VERCEL_ENV` is not `production`.
 - **Without one:** only when the browser says `Sec-Fetch-Site: same-origin` — measured:
