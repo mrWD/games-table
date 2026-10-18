@@ -10,7 +10,7 @@ import {
   type WatchFilter,
 } from '../store/selectors'
 import { GameRow } from '../components/cards'
-import { EmptyState, SectionLabel, TopTabs } from '../components/ui'
+import { DataCredit, EmptyState, SectionLabel, TopTabs } from '../components/ui'
 import { IconPad } from '../components/Icons'
 
 const TABS: Tab[] = ['PLAYING', 'BACKLOG', 'PLAYED', 'WATCH']
@@ -83,6 +83,7 @@ export default function LibraryPage() {
           ),
         )
       )}
+      {!isEmpty && <DataCredit />}
     </div>
   )
 }

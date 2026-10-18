@@ -12,7 +12,7 @@
 </head>
 <body>
 <h1>GamesTable — Privacy</h1>
-<p><em>Last updated: 2026-08-11</em></p>
+<p><em>Last updated: 2026-10-18</em></p>
 
 <p>GamesTable is a personal tracker for video games. The shortest honest summary: <strong>your
 library never leaves your device, and we could not read it if we wanted to.</strong></p>
@@ -25,9 +25,9 @@ which is why the app keeps offering you an export.</p>
 
 <h2>What leaves your device</h2>
 <p>Searching the catalogue sends your query to the services the catalogue comes from:
-RAWG and Steam, both through our own proxy. Like any website you visit, they see the request and your IP address. Cover
-and poster images load from their image hosts the same way.</p>
-<p>Catalogue queries pass through our proxy at games-table-bay.vercel.app, which exists only to keep the RAWG API key off your device and to add the CORS headers Steam does not send. It forwards the query, caches popular responses at the edge, and stores nothing about you.</p>
+<a href="https://rawg.io">RAWG</a>, <a href="https://www.igdb.com">IGDB</a> (run by Twitch) and Steam, all through our own proxy, so they see the query and not your IP address. Cover
+images load straight from their image hosts, which, like any website you visit, see the request and your IP address.</p>
+<p>Catalogue queries pass through our proxy at games-table-bay.vercel.app, which exists only to keep the RAWG and IGDB credentials off your device and to add the CORS headers Steam does not send. It forwards the query and caches popular responses at the edge. The proxy itself writes nothing about you anywhere: to stop one address flooding it, it counts requests per IP address in memory for one minute, and the count is gone when the minute is. Vercel, which hosts the proxy, keeps its own request logs, including your IP address, for about an hour.</p>
 
 <h2>Analytics</h2>
 <p>The website may report cookieless page views to Vercel Web Analytics &mdash; a screen

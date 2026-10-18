@@ -12,6 +12,8 @@ import { formatHours } from '../lib/format'
 import { IconDownload, IconPad, IconTrash, IconUpload } from '../components/Icons'
 import { SupportLinks } from '../components/Support'
 import { Feedback } from '../components/Feedback'
+import { Licenses } from '../components/Licenses'
+import { DataCredit } from '../components/ui'
 
 const THEMES: { value: ThemeChoice; label: string; hint: string }[] = [
   { value: 'system', label: 'SYSTEM', hint: 'Following your device setting.' },
@@ -244,10 +246,11 @@ export default function ProfilePage() {
       </p>
 
       <p className="attribution">
-        GamesTable · a free, fan-made, local-first tracker · not affiliated with RAWG, Valve,
-        YouTube or Twitch
+        GamesTable · a free, fan-made, local-first tracker · not affiliated with RAWG, IGDB,
+        Valve, YouTube or Twitch
       </p>
-      <p className="attribution">Game data from RAWG and Steam · build {__BUILD_TIME__}</p>
+      <DataCredit> · build {__BUILD_TIME__}</DataCredit>
+      <Licenses />
     </div>
   )
 }

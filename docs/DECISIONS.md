@@ -133,9 +133,10 @@ The native build reaches `/api/games` by absolute URL — there is no origin for
 to be same as, and unlike FilmTable every catalogue call goes through the proxy,
 so without this there would be no search at all. `VITE_API_BASE` still wins; the
 fallback to the production address keeps a store build from shipping searchless.
-The proxy needed no change: verified against production, a request carrying
-`Origin: capacitor://localhost` is answered 200, because the origin parses to the
-host `localhost` and the loopback rule already permits it.
+The proxy needed no change at the time: verified against production, a request carrying
+`Origin: capacitor://localhost` was answered 200, because the origin parsed to the
+host `localhost` and the loopback rule permitted it. Since 2026-10-18 the store origins
+are listed by name and the loopback rule no longer applies in production — see DEPLOY.
 
 ## Discover falls back to Steam's storefront (2026-08-11)
 
@@ -192,3 +193,27 @@ Things that cost a rebuild each, all of which look like "nothing happens":
 
 The Xcode target is added by `scripts/add-widget-target.rb`, which is idempotent —
 run it again and it repairs the project rather than duplicating the target.
+
+## Fixes from the legal review (2026-10-18)
+
+A review of the terms the app depends on found risks that end in a revoked key, a
+rejected build or a takedown rather than a lawsuit. What changed:
+
+- **The RAWG key was readable by anyone.** RAWG writes its paging links (`next`,
+  `previous`) with the key in them, and the proxy passed RAWG's body through verbatim.
+  The proxy now drops both links and scrubs the key from whatever is left. The key that
+  was exposed has to be rotated.
+- **Every catalogue is credited, with a link, wherever its data shows.** RAWG's terms ask
+  for an active hyperlink on every page that uses its data and IGDB asks to be credited;
+  the screen used to say "RAWG and Steam" even when IGDB had answered. `DataCredit` sits
+  under Explore (both the shelves and search results), Library, a game's page (naming
+  the catalogue the entry came from) and Profile.
+- **Adult titles are filtered** in the proxy — DEPLOY, "Adult titles".
+- **The mood words say they are AI.** Explore notes under "For you" that the moods are
+  read by the on-device model.
+- **Open-source licences.** `scripts/gen-licenses.mjs` writes `public/licenses.txt` on
+  every build and Profile opens it in place.
+- **The proxy** stopped answering requests with no Origin and any loopback origin in
+  production, and gained a per-address rate limit — DEPLOY.
+- **Store screenshots** show only open-source games with freely licensed art;
+  `scripts/store-screenshots.mjs` makes them and STORE.md has the rules.

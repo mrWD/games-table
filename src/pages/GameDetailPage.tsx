@@ -10,7 +10,7 @@ import { useLibrary } from '../store/library'
 import { useUi } from '../store/ui'
 import { useStats } from '../store/stats'
 import { StatusPicker } from '../components/cards'
-import { Cover, MetaScore } from '../components/ui'
+import { Cover, DataCredit, MetaScore, sourceOf } from '../components/ui'
 import { IconBack, IconExternal, IconTrash } from '../components/Icons'
 
 export default function GameDetailPage() {
@@ -209,7 +209,7 @@ export default function GameDetailPage() {
           </button>
         )}
 
-        <p className="attribution">Game data from RAWG and Steam</p>
+        <DataCredit source={sourceOf(game.id)} />
       </div>
     </div>
   )

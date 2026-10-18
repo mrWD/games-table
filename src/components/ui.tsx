@@ -191,3 +191,45 @@ export function ScrollToTop() {
   }, [pathname])
   return null
 }
+
+// ---------- data credit ----------
+
+const SOURCES = {
+  rawg: { name: 'RAWG', href: 'https://rawg.io' },
+  igdb: { name: 'IGDB', href: 'https://www.igdb.com' },
+  steam: { name: 'Steam', href: 'https://store.steampowered.com' },
+} as const
+
+export type CatalogueSource = keyof typeof SOURCES
+
+/**
+ * Where the games on this screen came from, each name a link.
+ *
+ * RAWG's terms ask for an active hyperlink to RAWG on every page that shows its data, and
+ * IGDB asks to be credited wherever its data and covers appear. A library or a list of
+ * results can hold all three catalogues at once, so by default all three are named; a
+ * single game's page names only the one its entry came from (the id prefix says which).
+ */
+export function DataCredit({ source, children }: { source?: CatalogueSource; children?: ReactNode }) {
+  const names = source ? [source] : (Object.keys(SOURCES) as CatalogueSource[])
+  return (
+    <p className="attribution">
+      Game data from{' '}
+      {names.map((key, i) => (
+        <span key={key}>
+          {i > 0 && (i === names.length - 1 ? ' and ' : ', ')}
+          <a href={SOURCES[key].href} target="_blank" rel="noreferrer">
+            {SOURCES[key].name}
+          </a>
+        </span>
+      ))}
+      {children}
+    </p>
+  )
+}
+
+/** The catalogue a saved or searched game came from, read off its id ('rawg:3498'). */
+export function sourceOf(id: string): CatalogueSource | undefined {
+  const prefix = id.slice(0, id.indexOf(':'))
+  return prefix in SOURCES ? (prefix as CatalogueSource) : undefined
+}

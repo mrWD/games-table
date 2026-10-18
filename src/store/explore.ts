@@ -46,7 +46,8 @@ export const useExplore = create<ExploreState>((set, get) => ({
     try {
       const results = await searchGames(term)
       // A slower earlier search must not overwrite a newer one.
-      if (mine === seq) set({ results, searching: false, failed: results.length === 0 })
+      // searchGames throws when no catalogue answered; an empty answer is just no match.
+      if (mine === seq) set({ results, searching: false, failed: false })
     } catch (err) {
       console.warn('search failed', err)
       if (mine === seq) set({ searching: false, failed: true })

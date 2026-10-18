@@ -66,10 +66,28 @@ The honest answers, same on both stores:
 - `docs/store/screenshots/ios-6.9/` — 1320×2868, the size Apple asks for. Light theme.
 - `docs/store/screenshots/android/` — 1080×2400. Dark theme, on purpose: between the
   two sets a reviewer sees the app in both themes, which is worth more than matching.
+- `docs/store/site/` — 414×896 light and dark pairs under the file names the products
+  page uses (`library`, `game`, `watch`, `for-you`, `search`).
 - `docs/store/feature-graphic-1024x500.png` — Play's feature graphic.
+- `docs/store/frame/` — the status and gesture bars, lifted from the simulator and
+  emulator, that the script lays over the store sets.
 
-All screenshots were taken from a library of **real** titles fetched from the app's own
-sources, not mocked up. Anyone regenerating them should keep that rule and one more,
-learned the hard way: the seed has to store exactly what the app itself would store.
-Trimming an author list or writing a raw upstream date straight through produces a
-screenshot that advertises behaviour the app does not have.
+`node scripts/store-screenshots.mjs` makes all of them (the header says what it needs).
+They are taken from a library of **real** titles fetched from the app's own sources, not
+mocked up, and seeded through the app's own search and store calls. Anyone regenerating
+them should keep that rule and one more, learned the hard way: the seed has to store
+exactly what the app itself would store. Trimming an author list or writing a raw
+upstream date straight through produces a screenshot that advertises behaviour the app
+does not have.
+
+**No studio artwork (2026-10-18).** The first set was built around Stardew Valley's key
+art. Now every game in the seed is open source with freely licensed art — SuperTuxKart,
+0 A.D., Mindustry, Battle for Wesnoth, Veloren, Xonotic, Minetest, Red Eclipse — and the
+image RAWG holds for each was looked at and is a picture of the game itself. Their
+licences (CC BY-SA, GPL) ask for credit: "Game images from SuperTuxKart, 0 A.D.,
+Mindustry, Battle for Wesnoth, Veloren, Xonotic, Minetest and Red Eclipse, used under
+their free licences" in the store description covers it. Everything else (the
+recommendations and Popular now on the site's `for-you`) is blurred where it is drawn.
+OpenTTD and Hedgewars were considered and left out: RAWG's OpenTTD image may show the
+original Transport Tycoon graphics, and its Hedgewars image is a store page with social
+logos. The donation button is gone from the shots, as it is from the native app.

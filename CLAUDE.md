@@ -184,6 +184,10 @@ three words are stored.
 
 ## Open questions
 
+- **The RAWG key must be rotated.** Until 2026-10-18 the proxy passed RAWG's paging
+  links through verbatim, and RAWG writes the key into them, so anyone calling
+  `/api/games` could read it. Fixed in the proxy (see DECISIONS); the exposed key is
+  still the one in the Vercel environment.
 - Vercel Web Analytics is not wired into GamesTable; the owner has not asked for
   it.
 - There is no import from third-party trackers.

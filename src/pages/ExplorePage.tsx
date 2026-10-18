@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useExplore } from '../store/explore'
 import { useRecommend } from '../store/recommend'
 import { GameResultRow } from '../components/cards'
-import { SectionLabel, SkeletonRows } from '../components/ui'
+import { DataCredit, SectionLabel, SkeletonRows } from '../components/ui'
 import { IconSearch, IconX } from '../components/Icons'
 import { ToneBackfill } from '../components/ToneBackfill'
 
@@ -48,6 +48,11 @@ function ForYou() {
           {taste.topGenres.slice(0, 3).join(', ')}
           {taste.topTones.length > 0 && ` · you lean ${taste.topTones.join(', ')}`}
         </p>
+      )}
+      {/* The mood words here, under the cards and in "you lean", are the on-device model's
+          reading of each description, not the catalogue's — so the screen says so. */}
+      {taste && taste.topTones.length > 0 && (
+        <p className="chips-hint">Moods are AI-read on your phone from each game's description.</p>
       )}
       {loading && items.length === 0 && <SkeletonRows count={3} />}
       {error && items.length === 0 && (
@@ -119,6 +124,7 @@ export default function ExplorePage() {
               {failed ? CATALOGUE_DOWN : `No games found for “${query.trim()}”.`}
             </p>
           )}
+          {!searching && results.length > 0 && <DataCredit />}
         </>
       ) : (
         <>
@@ -145,13 +151,7 @@ export default function ExplorePage() {
           {!discoverLoading && popular.length === 0 && upcoming.length === 0 && (
             <p className="hint">{CATALOGUE_DOWN}</p>
           )}
-          <p className="attribution">
-            Game data from{' '}
-            <a href="https://rawg.io" target="_blank" rel="noreferrer">
-              RAWG
-            </a>{' '}
-            and Steam
-          </p>
+          <DataCredit />
         </>
       )}
     </div>

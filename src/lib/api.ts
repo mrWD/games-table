@@ -198,6 +198,13 @@ export async function searchGames(query: string): Promise<GameSummary[]> {
     cc: 'US',
   })
   if (viaSteam?.items?.length) stats.source('steam')
+  // Nothing at all is not the same as nobody answering. The proxy drops adult titles, so
+  // a search can come back empty from catalogues that are perfectly well — and telling
+  // that person the catalogue is down would be wrong. Only a search no source answered
+  // is a failure.
+  if (viaRawg === null && viaIgdb === null && viaSteam === null) {
+    throw new Error('no catalogue answered')
+  }
   return (viaSteam?.items ?? []).map((i) => ({
     id: `steam:${i.id}`,
     title: i.name,

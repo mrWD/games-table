@@ -59,9 +59,10 @@ async function igdbAccessToken(clientId, clientSecret) {
  * client sends is quoted into a string literal, so it cannot inject clauses.
  */
 function igdbBody(query) {
+  // `themes.name` is asked for only so adultOnly() can read it; see there.
   const fields =
     'fields name,cover.image_id,first_release_date,genres.name,platforms.name,' +
-    'total_rating,aggregated_rating,summary;'
+    'total_rating,aggregated_rating,summary,themes.name;'
   const limit = Math.min(Math.max(Number(query.limit) || 20, 1), 50)
   const term = String(query.search ?? '').slice(0, 100).replace(/["\\]/g, '')
   if (term) return `search "${term}"; ${fields} limit ${limit};`
@@ -70,6 +71,74 @@ function igdbBody(query) {
     return `${fields} where first_release_date > ${now} & cover != null; sort first_release_date asc; limit ${limit};`
   }
   return `${fields} where total_rating_count > 20 & cover != null; sort total_rating desc; limit ${limit};`
+}
+
+/*
+ * Adult-only titles, kept out of every list this proxy returns.
+ *
+ * The app is rated 4+, and all three catalogues answer an ordinary search with
+ * explicit games and their cover art — measured: "hentai" returned 20 of 20 such
+ * titles from IGDB, 10 of 10 from Steam, and 1,630 from RAWG. Filtering here rather
+ * than in the client covers every build already installed the moment this deploys.
+ *
+ * The signals are the ones each catalogue actually carries, and they are narrower
+ * than they could be on purpose. RAWG tags The Witcher 3 with `nudity` and `mature`
+ * and GTA VI with `nudity`, so neither tag alone can decide — a tracker that cannot
+ * find The Witcher is broken. What separated them in the measured results: the
+ * explicit titles carry `sexual-content` or `nudity` and no ESRB rating at all, while
+ * the mainstream ones are rated. IGDB has an "Erotic" theme. Steam's search results
+ * carry nothing but a name, so for Steam the name is all there is.
+ */
+const ADULT_NAME = /\b(hentai|porn\w*|nsfw|xxx|erotic\w*|eroge|lewd|sex)\b|18\+/i
+const ADULT_TAGS = new Set(['nsfw', 'hentai', 'khentai', 'erotic', 'eroge', 'porn', 'pornographic'])
+const EXPLICIT_TAGS = new Set(['sexual-content', 'seksualnyi-kontent', 'nudity', 'nagota'])
+
+function adultOnly(source, game) {
+  if (ADULT_NAME.test(String(game?.name ?? ''))) return true
+  if (source === 'rawg') {
+    const tags = (game.tags ?? []).map((t) => t.slug)
+    if (tags.some((t) => ADULT_TAGS.has(t))) return true
+    const esrb = game.esrb_rating?.slug
+    if (esrb === 'adults-only') return true
+    return !esrb && tags.some((t) => EXPLICIT_TAGS.has(t))
+  }
+  if (source === 'igdb') return (game.themes ?? []).some((t) => /erotic/i.test(String(t?.name)))
+  return false
+}
+
+/**
+ * The upstream body, made fit to hand to a browser.
+ *
+ * RAWG writes its paging links with our key in them (`next`, `previous`), so passing
+ * its body through verbatim published the key to anyone who asked. The client never
+ * pages, so the links go; and as a last guard the key is scrubbed from whatever is
+ * left, in case RAWG ever echoes it somewhere new.
+ */
+function clean(source, path, body, key) {
+  let out = body
+  try {
+    const data = JSON.parse(body)
+    if (source === 'rawg' && data && typeof data === 'object') {
+      delete data.next
+      delete data.previous
+      if (path === 'games' && Array.isArray(data.results)) {
+        data.results = data.results.filter((g) => !adultOnly('rawg', g))
+      }
+    }
+    if (source === 'igdb' && Array.isArray(data)) {
+      out = JSON.stringify(data.filter((g) => !adultOnly('igdb', g)))
+    } else if (source === 'steam' && path === 'storesearch' && Array.isArray(data?.items)) {
+      data.items = data.items.filter((g) => !adultOnly('steam', g))
+      data.total = data.items.length
+      out = JSON.stringify(data)
+    } else {
+      out = JSON.stringify(data)
+    }
+  } catch {
+    // Not JSON (an upstream error page): passed on as it came, minus the key.
+  }
+  // The length guard keeps a misconfigured short value from eating ordinary text.
+  return key && key.length >= 16 ? out.split(key).join('') : out
 }
 
 function cacheFor(source, path) {
@@ -81,26 +150,134 @@ function cacheFor(source, path) {
   return 'public, s-maxage=3600, stale-while-revalidate=86400'
 }
 
-/**
- * Browsers enforce Origin, so this keeps casual quota borrowing out. Non-browser
- * callers can spoof it — the edge cache and upstream limits are the real backstop.
+/*
+ * Who may call this proxy, and what that does and does not stop.
+ *
+ * Every rule below reads headers a *browser* sets and a page cannot forge: Origin and
+ * Sec-Fetch-Site. So they keep other websites from spending our RAWG and IGDB quota
+ * through their visitors' browsers, and they turn away a bare `curl`. They do not
+ * stop a script that sends `Origin: capacitor://localhost` itself — that request is
+ * indistinguishable from the real app, and the app has no secret it could hold to
+ * tell them apart (anything in the bundle is public). The rate limit further down
+ * caps one address on one warm instance; the edge cache and the upstreams' own limits
+ * remain the real backstop, and a leaked key is answered by rotating it.
  */
-function originAllowed(origin, req) {
-  if (!origin) return true
-  let host
-  try {
-    host = new URL(origin).host
-  } catch {
-    return false
-  }
-  if (/^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host)) return true
 
-  const self = String(req.headers['x-forwarded-host'] ?? req.headers.host ?? '')
+/** The web build on Vercel. There is no other web mirror of this app. */
+const PRODUCTION_HOSTS = ['games-table-bay.vercel.app']
+
+/**
+ * The store builds. The iOS WebView serves the bundle from `capacitor://localhost`,
+ * Android's from `https://localhost` (`androidScheme: 'https'` in capacitor.config.ts).
+ * Matched as whole origins, so `https://localhost:8443` is not one of them.
+ */
+const APP_ORIGINS = ['capacitor://localhost', 'https://localhost']
+
+/** Dev servers pick arbitrary ports. Only outside production — see originAllowed. */
+const LOOPBACK = /^(localhost|127\.0\.0\.1|\[::1\])$/
+
+function isProduction() {
+  return process.env.VERCEL_ENV === 'production'
+}
+
+function selfHost(req) {
+  return String(req.headers['x-forwarded-host'] ?? req.headers.host ?? '')
+}
+
+function originAllowed(origin, req) {
+  if (APP_ORIGINS.includes(origin)) return true
+  let url
+  try {
+    url = new URL(origin)
+  } catch {
+    return false // includes the literal "null" a sandboxed frame sends
+  }
+  // A local dev server, on whatever port Vite chose. Never in production: there it
+  // would let any page someone serves from their own machine through.
+  if (!isProduction() && LOOPBACK.test(url.hostname)) return true
+  if (url.protocol !== 'https:') return false
+
   const extra = String(process.env.ALLOWED_ORIGINS ?? '')
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean)
-  return new Set([self, ...extra]).has(host)
+  // Our own host covers preview deployments, whose addresses change per push.
+  return new Set([selfHost(req), ...PRODUCTION_HOSTS, ...extra]).has(url.host)
+}
+
+/**
+ * A request with no Origin. Browsers leave it off a same-origin GET, which is exactly
+ * what the web app sends — measured in Chrome against production, including the
+ * requests its service worker re-issues: no Origin, `Sec-Fetch-Site: same-origin`,
+ * and a Referer on our own host. A cross-site `<img>` or `<script>` pointed at us also
+ * arrives without Origin, but says `cross-site`, and a bare curl says nothing at all;
+ * both are refused.
+ *
+ * Browsers that predate Fetch Metadata (Safari before 16.4) send no Sec-Fetch-Site,
+ * so for them the Referer decides.
+ */
+function sameOriginRequest(req) {
+  const site = req.headers['sec-fetch-site']
+  if (site) return site === 'same-origin'
+  try {
+    return new URL(String(req.headers.referer ?? '')).host === selfHost(req)
+  } catch {
+    return false
+  }
+}
+
+/*
+ * Per-address rate limit, held in this instance's memory.
+ *
+ * What it is: a fixed one-minute window per client address, per warm function
+ * instance. It stops one client from hammering the catalogues through us in a tight
+ * loop. What it is not: a global limit. Vercel runs several instances side by side and
+ * recycles them, each with its own empty counter, so a determined caller gets more
+ * than this, and one spread over many addresses is not slowed at all. Responses served
+ * from the edge cache never reach this code and are not counted — they cost the
+ * upstreams nothing. A global limit would need shared state (Vercel's Firewall
+ * rate-limit rules, or a store keyed by IP address), which is a decision for the
+ * owner, not a default.
+ *
+ * The ceiling is generous on purpose: Explore opens with a burst of genre lookups for
+ * "For you", and people on one mobile carrier can share an address.
+ */
+const WINDOW_MS = 60_000
+const MAX_PER_WINDOW = 120
+const hits = new Map()
+
+/**
+ * Vercel overwrites X-Forwarded-For with the address it saw, so a client cannot pick
+ * its own. IPv6 is keyed by its /64: one phone can hold a whole block of addresses.
+ */
+function clientKey(req) {
+  const ip =
+    String(req.headers['x-forwarded-for'] ?? '').split(',')[0].trim() ||
+    String(req.headers['x-real-ip'] ?? '') ||
+    req.socket?.remoteAddress ||
+    'unknown'
+  if (!ip.includes(':')) return ip
+  const [head, tail = ''] = ip.split('::')
+  const left = head ? head.split(':') : []
+  const right = tail ? tail.split(':') : []
+  const groups = [...left, ...Array(Math.max(8 - left.length - right.length, 0)).fill('0'), ...right]
+  return groups.slice(0, 4).join(':') + '::/64'
+}
+
+/** Seconds until the caller may try again, or 0 when the request may proceed. */
+function retryAfter(req, now = Date.now()) {
+  // Expired windows are swept only when the map grows, so a quiet instance does no work.
+  if (hits.size > 10_000) {
+    for (const [k, v] of hits) if (now - v.start >= WINDOW_MS) hits.delete(k)
+  }
+  const key = clientKey(req)
+  let entry = hits.get(key)
+  if (!entry || now - entry.start >= WINDOW_MS) {
+    entry = { start: now, count: 0 }
+    hits.set(key, entry)
+  }
+  entry.count += 1
+  return entry.count > MAX_PER_WINDOW ? Math.ceil((entry.start + WINDOW_MS - now) / 1000) : 0
 }
 
 function buildUpstream(source, path, query, key) {
@@ -121,11 +298,10 @@ function buildUpstream(source, path, query, key) {
 
 export default async function handler(req, res) {
   const origin = req.headers.origin
-  const allowed = originAllowed(origin, req)
-  if (origin && allowed) {
-    res.setHeader('Access-Control-Allow-Origin', origin)
-    res.setHeader('Vary', 'Origin')
-  }
+  const allowed = origin ? originAllowed(origin, req) : sameOriginRequest(req)
+  // Every answer depends on who asked, so a cached one must not cross origins.
+  res.setHeader('Vary', 'Origin')
+  if (origin && allowed) res.setHeader('Access-Control-Allow-Origin', origin)
 
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
@@ -137,7 +313,7 @@ export default async function handler(req, res) {
     res.status(405).json({ error: 'GET only' })
     return
   }
-  if (origin && !allowed) {
+  if (!allowed) {
     res.status(403).json({ error: 'origin not allowed' })
     return
   }
@@ -153,6 +329,16 @@ export default async function handler(req, res) {
   if (source === 'rawg' && !key) {
     // The client reads 503 as "no RAWG here" and falls back to Steam.
     res.status(503).json({ error: 'RAWG key not configured' })
+    return
+  }
+
+  // Counted here, after every refusal, so only requests that would reach an upstream
+  // use it up.
+  const wait = retryAfter(req)
+  if (wait) {
+    res.setHeader('Retry-After', String(wait))
+    res.setHeader('Cache-Control', 'no-store')
+    res.status(429).json({ error: 'too many requests' })
     return
   }
 
@@ -177,7 +363,8 @@ export default async function handler(req, res) {
         },
         body: igdbBody(req.query),
       })
-      const body = await upstream.text()
+      // IGDB is sent a token, never the secret, so there is no key here to scrub.
+      const body = clean(source, path, await upstream.text())
       res.status(upstream.status)
       res.setHeader('Content-Type', 'application/json; charset=utf-8')
       if (upstream.ok) res.setHeader('Cache-Control', cacheFor(source, path))
@@ -194,7 +381,7 @@ export default async function handler(req, res) {
     const upstream = await fetch(buildUpstream(source, path, req.query, key), {
       headers: { 'User-Agent': 'GamesTable/1.0 (+https://github.com/mrWD/games-table)' },
     })
-    const body = await upstream.text()
+    const body = clean(source, path, await upstream.text(), key)
     res.status(upstream.status)
     res.setHeader('Content-Type', 'application/json; charset=utf-8')
     if (upstream.ok) res.setHeader('Cache-Control', cacheFor(source, path))
