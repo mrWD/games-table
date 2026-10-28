@@ -4,6 +4,7 @@ import type { BackupFile, GameStatus, GameSummary, TrackedGame } from '../lib/ty
 import { successFeedback, tapFeedback } from '../lib/native-ui'
 import { deviceStorage } from '../lib/storage'
 import { useStats } from './stats'
+import { count } from '../lib/metrics'
 
 /**
  * The whole user library. Unlike FilmTable's shows there is no separate metadata cache:
@@ -37,6 +38,12 @@ function withTimestamps(game: TrackedGame, status: GameStatus, now: number): Tra
   return next
 }
 
+/** For the daily ping (lib/metrics): a new entry, a move, and reaching the end. */
+function countStatus(before: TrackedGame | undefined, status: GameStatus) {
+  count(before ? 'status_changed' : 'game_added')
+  if ((status === 'played' || status === 'watched') && before?.status !== status) count('game_finished')
+}
+
 /** Drops the one field that costs more than everything else in an entry combined. */
 function withoutDescriptions(
   games: Record<string, TrackedGame>,
@@ -55,12 +62,13 @@ function withoutDescriptions(
 
 export const useLibrary = create<LibraryState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       games: {},
 
       setStatus: (game, status) => {
         // Outside the updater on purpose: StrictMode runs it twice.
         useStats.getState().recordStatusChange()
+        countStatus(get().games[game.id], status)
         // Reaching an end state is the moment worth feeling; the rest is a tick.
         if (status === 'played' || status === 'watched') successFeedback()
         else tapFeedback()
@@ -76,6 +84,7 @@ export const useLibrary = create<LibraryState>()(
 
       changeStatus: (id, status) => {
         useStats.getState().recordStatusChange()
+        countStatus(get().games[id], status)
         if (status === 'played' || status === 'watched') successFeedback()
         else tapFeedback()
         set((s) => {
@@ -92,7 +101,8 @@ export const useLibrary = create<LibraryState>()(
           return { games }
         }),
 
-      rate: (id, rated) =>
+      rate: (id, rated) => {
+        if (rated != null) count('game_rated')
         set((s) => {
           const g = s.games[id]
           if (!g) return s
@@ -100,7 +110,8 @@ export const useLibrary = create<LibraryState>()(
           if (rated == null) delete next.rated
           else next.rated = rated
           return { games: { ...s.games, [id]: next } }
-        }),
+        })
+      },
 
       setHours: (id, hours) =>
         set((s) => {

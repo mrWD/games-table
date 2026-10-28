@@ -1,6 +1,7 @@
 import { isNativeApp } from 'tables-core'
 import type { GameSummary } from './types'
 import { stats } from '../store/stats'
+import { countApiError } from './metrics'
 
 /**
  * Both catalogues are reached through our own /api/games proxy — RAWG because its key
@@ -58,12 +59,17 @@ async function proxy<T>(
       signal: AbortSignal.timeout?.(REQUEST_TIMEOUT_MS),
     })
     if (res.status === 503 || res.status === 404 || res.status === 403) {
+      countApiError(source)
       if (source === 'rawg') rawgDisabled = true
       return null
     }
-    if (!res.ok) return null
+    if (!res.ok) {
+      countApiError(source)
+      return null
+    }
     return (await res.json()) as T
   } catch (err) {
+    countApiError(source)
     // A timeout says "too slow right now", not "not there". Treating the two alike
     // would let one slow moment disable RAWG — and with it every console game — for
     // the rest of the session.

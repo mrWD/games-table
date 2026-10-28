@@ -23,11 +23,21 @@ look at the neighbouring project.
 1. **The library lives on the device.** IndexedDB in a browser, a JSON file in
    private app storage when running natively, localStorage for small prefs (see
    DECISIONS). No accounts, nothing personal collected. There is exactly as much server code as it takes to hide
-   the key and work around the missing CORS — and it stores nothing. The one
+   the key and work around the missing CORS — and it stores nothing. One
    exception is `src/components/Analytics.tsx`: on a `.vercel.app` host it reports
    cookieless screen-view counts to Vercel Web Analytics. It sends a screen name
    and never a title, a search term or an identifier, and it stays inert
    everywhere else.
+   **Anonymous usage counts are the other exception** (the owner's decision, 2026-10-28,
+   made to learn how many people use the apps before deciding on ads or tips):
+   `src/lib/metrics.ts` sends one ping a day to `mrwd-metrics.vercel.app` with counts of
+   named events and screen groups, error kinds, version, platform, UI language, local
+   date and cohort week. Never titles, search text, anything typed, error messages or
+   any ID. On by default; off in Profile ("Share anonymous usage statistics") stops it
+   and clears the counters; Global Privacy Control starts it off on the web. It follows
+   [app-metrics/docs/CLIENT.md](../../app-metrics/docs/CLIENT.md) (`~/Projects/app-metrics`)
+   to the letter — read that before changing an event, a field or the timing, and keep
+   `public/privacy.html` and `docs/STORE.md` in step.
 2. **Watching is a first-class scenario.** The watch track is symmetric to the
    play track: want to watch → watching → watched. Do not collapse it back into a
    single status.
@@ -69,6 +79,10 @@ a width of 375px. The mandatory minimum after any noticeable change:
 - both themes and **horizontal overflow** (`scrollWidth` against `clientWidth`,
   must be 0 — that is exactly how this bug was caught in FilmTable);
 - the hidden `/#/insights` page and the donation fan at the bottom left;
+- the daily ping, against `node scripts/dev-server.mjs` in `~/Projects/app-metrics`:
+  `VITE_METRICS_URL=http://localhost:8787/api/ping` in `.env.development.local`, and the
+  dev server prints every body it gets (204 = accepted, 400 names the bad field). State
+  is `gamestable-metrics-v1` in localStorage; move `lastDay` back to send again;
 - a clean console.
 
 Pitfalls of the verification itself (all three have already cost time):
@@ -101,8 +115,9 @@ Contacts inside the app (Profile → Feedback & contact): `lvigtor@gmail.com` an
 itself — it assembles a `mailto:` and hands it to the mail client; there is no
 backend for it and none may be added.
 
-There is no analytics here at all — unlike FilmTable, which has Vercel Web
-Analytics.
+Analytics here is the cookieless Vercel Web Analytics on `.vercel.app` hosts and the
+anonymous daily counts of `src/lib/metrics.ts` (principle 1) — when stating anything
+publicly, do not claim there is none.
 
 ## App Store / TestFlight (as of 2026-08-29)
 
@@ -188,8 +203,6 @@ three words are stored.
   links through verbatim, and RAWG writes the key into them, so anyone calling
   `/api/games` could read it. Fixed in the proxy (see DECISIONS); the exposed key is
   still the one in the Vercel environment.
-- Vercel Web Analytics is not wired into GamesTable; the owner has not asked for
-  it.
 - There is no import from third-party trackers.
 - The text of a LinkedIn post about the project is written but not published.
 

@@ -6,6 +6,8 @@ import App from './App'
 import { whenHydrated } from 'tables-core'
 import { hideSplash, wireBackButton } from './lib/native-ui'
 import { useLibrary } from './store/library'
+import { useStats } from './store/stats'
+import { startMetrics } from './lib/metrics'
 
 registerSW({ immediate: true })
 wireBackButton()
@@ -16,6 +18,13 @@ wireBackButton()
 // background covers the wait; natively the splash screen does (launchAutoHide is off),
 // and is dismissed here once there is something behind it.
 void whenHydrated([useLibrary]).then(() => {
+  // After hydration, so a library from before metrics existed is seen: such a device is
+  // not a new install, and its first ping says so (cohort "legacy").
+  startMetrics(
+    () =>
+      Object.keys(useLibrary.getState().games).length > 0 ||
+      useStats.getState().firstVisit !== null,
+  )
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <App />

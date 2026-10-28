@@ -9,6 +9,7 @@ import { formatDate, formatHours, isYearOnly, shortPlatform, yearOf } from '../l
 import { useLibrary } from '../store/library'
 import { useUi } from '../store/ui'
 import { useStats } from '../store/stats'
+import { count } from '../lib/metrics'
 import { StatusPicker } from '../components/cards'
 import { Cover, DataCredit, MetaScore, sourceOf } from '../components/ui'
 import { IconBack, IconExternal, IconTrash } from '../components/Icons'
@@ -178,7 +179,10 @@ export default function GameDetailPage() {
               href={link.url}
               target="_blank"
               rel="noreferrer noopener"
-              onClick={() => useStats.getState().recordWatchLink()}
+              onClick={() => {
+                useStats.getState().recordWatchLink()
+                count('watch_link_opened')
+              }}
             >
               {link.label}
               <IconExternal size={15} strokeWidth={2} />

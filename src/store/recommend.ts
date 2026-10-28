@@ -3,6 +3,7 @@ import { catalogueByGenre } from '../lib/api'
 import type { GameStatus, GameSummary, TrackedGame } from '../lib/types'
 import { useLibrary } from './library'
 import { useTones } from './tone'
+import { count } from '../lib/metrics'
 
 /**
  * Content-based recommendations, computed on this device.
@@ -318,6 +319,7 @@ export const useRecommend = create<RecommendState>((set, get) => ({
     set({ loading: true, error: false })
     try {
       const items = await buildRecommendations(taste)
+      count('recommendations_loaded')
       set({ items, taste, signature, fetchedAt: Date.now(), loading: false })
     } catch (err) {
       console.warn('recommendations failed', err)

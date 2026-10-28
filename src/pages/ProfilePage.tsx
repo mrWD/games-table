@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useSyncExternalStore } from 'react'
 import { buildBackup, isValidBackup, useLibrary } from '../store/library'
 import { buildStats, STATUS_LABEL, STATUS_ORDER } from '../store/selectors'
 import { useUi } from '../store/ui'
@@ -7,6 +7,7 @@ import { useStats } from '../store/stats'
 import { AutoBackup } from '../components/AutoBackup'
 import { exportJsonFile, isNativeApp } from 'tables-core'
 import { native } from '../lib/native'
+import { count, metricsEnabled, setMetricsEnabled, subscribeMetrics } from '../lib/metrics'
 import { donationsHidden, siteLink } from '../lib/from-app'
 import { formatHours } from '../lib/format'
 import { IconDownload, IconPad, IconTrash, IconUpload } from '../components/Icons'
@@ -65,6 +66,7 @@ export default function ProfilePage() {
   const askConfirm = useUi((s) => s.askConfirm)
   const theme = useTheme((s) => s.theme)
   const setTheme = useTheme((s) => s.setTheme)
+  const sharing = useSyncExternalStore(subscribeMetrics, metricsEnabled)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const stats = buildStats(games)
@@ -80,6 +82,7 @@ export default function ProfilePage() {
       return
     }
     useStats.getState().recordExport()
+    count('backup_exported')
     showToast('Backup exported')
   }
 
@@ -169,6 +172,25 @@ export default function ProfilePage() {
         ))}
       </div>
       <p className="chips-hint">{THEMES.find((t) => t.value === theme)?.hint}</p>
+
+      {/* lib/metrics: off stops the daily ping and deletes what was counted. */}
+      <h2 className="h2">Share anonymous usage statistics</h2>
+      <div className="chips">
+        {([false, true] as const).map((on) => (
+          <button
+            key={String(on)}
+            className={`chip${sharing === on ? ' active' : ''}`}
+            aria-pressed={sharing === on}
+            onClick={() => setMetricsEnabled(on)}
+          >
+            {on ? 'ON' : 'OFF'}
+          </button>
+        ))}
+      </div>
+      <p className="chips-hint">
+        Once a day: which screens and features were used, app version, platform and
+        language. No IDs, titles or anything you type.
+      </p>
 
       <h2 className="h2">Data</h2>
       <BackupNudge items={Object.keys(games).length} />
