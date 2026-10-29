@@ -188,8 +188,8 @@ export default function ProfilePage() {
         ))}
       </div>
       <p className="chips-hint">
-        Once a day: which screens and features were used, app version, platform and
-        language. No IDs, titles or anything you type.
+        Once a day: which screens and features were used, app version, platform,
+        language and error counts. No IDs, titles or anything you type.
       </p>
 
       <h2 className="h2">Data</h2>
