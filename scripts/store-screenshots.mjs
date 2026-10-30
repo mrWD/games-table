@@ -2,17 +2,23 @@
  * Regenerates the store screenshots in docs/store/screenshots/.
  *
  *   npm i --no-save playwright && npx playwright install chromium
- *   node scripts/store-screenshots.mjs
+ *   node scripts/store-screenshots.mjs                          # every set
+ *   node scripts/store-screenshots.mjs ios-6.9 ipad-13 android  # only these folders
  *
  * It starts its own Vite dev server, seeds a library through the app's own modules — the
  * same search, store and notes calls a person's taps would make, so the seed holds
  * exactly what the app would store (see docs/STORE.md) — and photographs each screen at
- * the size each store asks for: iPhone 6.9" at 1320×2868 in the light theme, Android
- * phone at 1080×2400 in the dark one — plus docs/store/site/, the 414×896 light and dark
- * pairs the products page shows. `?from=app` hides the donation button the way the
+ * the size each store asks for: iPhone 6.9" at 1320×2868 and iPad 13" at 2064×2752 in
+ * the light theme, Android phone at 1080×2400 in the dark one — plus docs/store/site/,
+ * the 414×896 light and dark pairs the products page shows. `?from=app` hides the donation button the way the
  * native build does. The status and gesture bars in docs/store/frame/ are composited on
  * top; the safe-area insets are emulated so the layout leaves room for them as it does
  * on the phone.
+ *
+ * A run is not a person using the app: the daily usage ping is refused before it leaves
+ * (src/lib/metrics.ts would otherwise count every fresh browser context as a new install),
+ * and its one-time notice is dismissed up front so it does not cover the shots. Every file
+ * is saved without an alpha channel, which App Store Connect refuses.
  *
  * The games are chosen so the artwork can be shown: all eight are open-source games whose
  * art ships under a free licence (0 A.D., Minetest and Red Eclipse: CC BY-SA; Battle for
@@ -26,6 +32,7 @@
  * the production deployment unless told otherwise.
  */
 import { spawn } from 'node:child_process'
+import { mkdir } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -73,6 +80,11 @@ const SITE_SHOTS = [
 const SETS = [
   // 62/34pt are the iPhone 16 Pro Max insets; the bars come from the simulator.
   { dir: 'screenshots/ios-6.9', width: 440, height: 956, scheme: 'light', insets: { top: 62, bottom: 34 }, status: 'ios-status.png', shots: STORE_SHOTS },
+  // 32/20pt put every line where the app itself draws it on the iPad Pro 13" simulator
+  // (iPadOS 27), measured against FilmTable running there; the bar is that simulator's, its
+  // window title left out. At this width the app shows its wide-screen layout, the phone
+  // column centred.
+  { dir: 'screenshots/ipad-13', width: 1032, height: 1376, scale: 2, scheme: 'light', insets: { top: 32, bottom: 20 }, status: 'ipad-status.png', shots: STORE_SHOTS },
   { dir: 'screenshots/android', width: 360, height: 800, scheme: 'dark', insets: { top: 24, bottom: 24 }, status: 'android-status.png', nav: 'android-nav.png', shots: STORE_SHOTS },
   { dir: 'site', width: 414, height: 896, scale: 1, scheme: 'light', suffix: '-light', shots: SITE_SHOTS },
   { dir: 'site', width: 414, height: 896, scale: 1, scheme: 'dark', suffix: '-dark', shots: SITE_SHOTS },
@@ -149,8 +161,9 @@ async function shoot(page, set, { name, hash, act }) {
   const shot = await page.screenshot({ type: 'png' })
 
   const file = join(OUT, set.dir, `${name}${set.suffix ?? ''}.png`)
+  await mkdir(dirname(file), { recursive: true })
   if (!set.status) {
-    await sharp(shot).png().toFile(file)
+    await sharp(shot).removeAlpha().png().toFile(file)
     console.log(file)
     return
   }
@@ -163,15 +176,22 @@ async function shoot(page, set, { name, hash, act }) {
     const { height } = await nav.metadata()
     layers.push({
       input: await (set.scheme === 'dark' ? nav.negate({ alpha: false }) : nav).toBuffer(),
-      top: set.height * 3 - height,
+      top: set.height * (set.scale ?? 3) - height,
       left: 0,
     })
   }
-  await sharp(shot).composite(layers).png().toFile(file)
+  // Composited first, flattened after: sharp composites last, so a removeAlpha() in the same
+  // chain would run before the bars bring their alpha back in.
+  const framed = await sharp(shot).composite(layers).png().toBuffer()
+  await sharp(framed).removeAlpha().png().toFile(file)
   console.log(file)
 }
 
 async function main() {
+  const only = process.argv.slice(2)
+  const sets = only.length ? SETS.filter((s) => only.some((o) => s.dir.endsWith(o))) : SETS
+  if (!sets.length) throw new Error(`no set matches ${only.join(' ')}`)
+
   const vite = spawn('npx', ['vite', '--port', String(PORT), '--strictPort'], {
     cwd: ROOT,
     stdio: 'pipe',
@@ -184,7 +204,7 @@ async function main() {
 
   const browser = await chromium.launch()
   try {
-    for (const set of SETS) {
+    for (const set of sets) {
       const context = await browser.newContext({
         viewport: { width: set.width, height: set.height },
         deviceScaleFactor: set.scale ?? 3,
@@ -198,6 +218,8 @@ async function main() {
         const cdp = await context.newCDPSession(page)
         await cdp.send('Emulation.setSafeAreaInsetsOverride', { insets: { left: 0, right: 0, ...set.insets } })
       }
+      await context.route(/\/api\/ping\b/, (route) => route.abort())
+      await context.addInitScript(() => localStorage.setItem('gamestable-metrics-notice-dismissed', '1'))
       await page.goto(`${BASE}/?from=app#/`)
       await page.settle()
       await seed(page, GAMES)
