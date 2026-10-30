@@ -524,6 +524,12 @@ img {
   box-shadow: var(--shadow);
 }
 
+/* Inside the hero the button is placed against the hero, which already is the centred
+   column, so the viewport arithmetic above would move it twice on a wide screen. */
+.hero .floatback {
+  left: 12px;
+}
+
 .detail-body {
   padding: 0 16px;
   margin-top: -8px;
