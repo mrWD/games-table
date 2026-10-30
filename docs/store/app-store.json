@@ -1,0 +1,45 @@
+{
+  "appId": "6806613778",
+  "locale": "en-US",
+  "name": "GamesTable",
+  "subtitle": "Track games you play or watch",
+  "promotionalText": "Your backlog, your hours and your ratings in one place, and the games you'd rather watch too. No account needed, and your library stays on your device.",
+  "description": "GamesTable keeps track of your games: what you're playing, what you want to play, what you finished. And, as a track of its own, the games you'd rather watch as playthroughs.\n\n• Seven statuses across two tracks, play and watch\n• Hours played, your own score, platform and a note for every game\n• One tap opens playthroughs of a game on YouTube or Twitch\n• Explore gives a reason for every recommendation, taken from your own library\n• Adult-only titles are kept out of search and recommendations\n• Home screen widgets for what you're playing and what's waiting\n• If your iPhone or iPad is set to another language, descriptions can be translated on the device, with the original one tap away\n\nNo account, no sign-up. Your library stays on your device, and you can export it to a single file and import it back whenever you like.\n\nOnce a day the app sends anonymous usage counts: which screens and features were used, kinds of errors, the app version, platform and language. No IDs, no titles, nothing you type. You can turn it off in Profile.\n\nGame data comes from RAWG, IGDB and Steam. GamesTable is a free, fan-made tracker and is not affiliated with RAWG, IGDB, Valve, YouTube or Twitch.\n\nGame images in the screenshots come from SuperTuxKart, 0 A.D., Mindustry, Battle for Wesnoth, Veloren, Xonotic, Minetest and Red Eclipse, used under their free licences (CC BY-SA and GPL).",
+  "keywords": "backlog,tracker,videogame,gaming,playthrough,longplay,hours,finished,collection,rpg,console,pc,diary",
+  "supportUrl": "https://mrwd.github.io/products/games-table/",
+  "marketingUrl": "https://mrwd.github.io/products/games-table/",
+  "privacyPolicyUrl": "https://games-table-bay.vercel.app/privacy.html",
+  "copyright": "2026 Viktor Lavrov",
+  "primaryCategory": "ENTERTAINMENT",
+  "secondaryCategory": null,
+  "contentRights": "USES_THIRD_PARTY_CONTENT",
+  "ageRating": {
+    "violenceCartoonOrFantasy": "INFREQUENT",
+    "violenceRealistic": "INFREQUENT",
+    "gunsOrOtherWeapons": "INFREQUENT",
+    "horrorOrFearThemes": "INFREQUENT",
+    "matureOrSuggestiveThemes": "INFREQUENT",
+    "alcoholTobaccoOrDrugUseOrReferences": "INFREQUENT"
+  },
+  "reviewNotes": "No account or sign-in. Everything works right after install.\n\nTo try it: open Explore in the bottom bar, search for a game (for example SuperTuxKart), open it and pick a status such as Playing. It then shows up in Library, where you can add hours, a score and a note. The links under \"Watch instead\" open YouTube or Twitch in the browser.\n\nNetwork calls: catalogue searches go through our own proxy at games-table-bay.vercel.app to RAWG, IGDB and Steam. The proxy keeps the API keys off the device and drops adult-only titles. Cover images load from the catalogues' image hosts. Once a day the app sends anonymous usage counts to mrwd-metrics.vercel.app: screens and features used, error kinds, app version, platform and language, with no identifiers of any kind. It can be turned off in Profile under \"Share anonymous usage statistics\". Nothing else leaves the device.\n\nThere are no in-app purchases, no ads and no donation links in the app.",
+  "appPrivacy": {
+    "collected": [
+      {
+        "type": "Usage Data › Product Interaction",
+        "linked": false,
+        "tracking": false,
+        "purposes": [
+          "Analytics"
+        ]
+      },
+      {
+        "type": "Diagnostics › Other Diagnostic Data",
+        "linked": false,
+        "tracking": false,
+        "purposes": [
+          "Analytics"
+        ]
+      }
+    ]
+  }
+}
