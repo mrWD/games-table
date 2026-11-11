@@ -39,6 +39,14 @@
         "purposes": [
           "Analytics"
         ]
+      },
+      {
+        "type": "Search History",
+        "linked": false,
+        "tracking": false,
+        "purposes": [
+          "App Functionality"
+        ]
       }
     ]
   }
